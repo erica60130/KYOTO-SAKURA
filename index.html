@@ -270,11 +270,19 @@
                 <p class="text-xs text-white/80 mt-3 font-medium">約 NT$ {{ formatNumber(totalExpensesTWD) }}</p>
             </div>
             <div class="bg-white rounded-3xl p-5 card-shadow border border-sakura-pink/20 min-h-[400px]">
-                <h3 class="font-bold text-gray-800 mb-4 flex items-center pb-2 border-b border-gray-100"><i class="fa-solid fa-receipt text-gray-400 mr-2"></i> 支出與分帳紀錄</h3>
-                <div class="space-y-4">
-                    <div v-for="(exp, idx) in expenses" :key="idx" class="border border-gray-100 rounded-2xl p-4 relative group">
-                        <button @click="removeExpense(idx)" class="absolute top-3 right-3 text-red-300 hover:text-red-500"><i class="fa-solid fa-trash-can text-sm"></i></button>
-                        <div class="flex justify-between items-start mb-3 pr-6">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                    <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-cloud text-blue-400 mr-2"></i> 雲端共用帳本</h3>
+                    <button @click="fetchExpenses" class="text-gray-400 hover:text-sakura-dark text-sm"><i class="fa-solid fa-rotate-right" :class="{'fa-spin': isLoadingExpenses}"></i></button>
+                </div>
+
+                <div v-if="isLoadingExpenses" class="text-center py-16 text-gray-400">
+                    <i class="fa-solid fa-cloud-arrow-down text-4xl mb-3 text-blue-300 fa-bounce"></i>
+                    <p class="text-sm">正在同步最新帳本...</p>
+                </div>
+                
+                <div v-else class="space-y-4">
+                    <div v-for="(exp, idx) in expenses" :key="exp.id || idx" class="border border-gray-100 rounded-2xl p-4 relative">
+                        <div class="flex justify-between items-start mb-3">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm shadow-sm" :class="getCategoryColor(exp.category)"><i :class="getCategoryIcon(exp.category)"></i></div>
                                 <div><p class="font-bold text-gray-800">{{ exp.name }}</p><p class="text-[10px] text-gray-400 mt-0.5">{{ exp.date }} · {{ exp.payment }}</p></div>
@@ -283,9 +291,14 @@
                         </div>
                         <div class="bg-sakura-bg rounded-xl p-2.5 text-xs text-gray-600 flex justify-between items-center border border-sakura-pink/20">
                             <div><span class="font-bold text-sakura-dark">代墊：</span>{{ exp.payer }}</div>
-                            <div><span class="font-bold text-sakura-dark">分攤：</span>{{ exp.splitters.join(', ') }}</div>
+                            <div><span class="font-bold text-sakura-dark">分攤：</span>{{ exp.splitters }}</div>
                         </div>
                     </div>
+                </div>
+                
+                <div v-if="!isLoadingExpenses && expenses.length === 0" class="text-center py-10 text-gray-300">
+                    <i class="fa-solid fa-file-invoice-dollar text-4xl mb-2"></i>
+                    <p class="text-sm">目前沒有任何花費<br>點擊右下角「+」開始記帳</p>
                 </div>
             </div>
         </div>
@@ -336,7 +349,7 @@
                     <div class="flex gap-4 text-xs bg-white p-2 rounded-lg"><label v-for="p in ['媽媽','榆','羚']" :key="'s'+p" class="flex items-center"><input type="checkbox" v-model="newExpense.splitters" :value="p" class="mr-1 accent-sakura-dark">{{p}}</label></div>
                 </div>
             </div>
-            <div class="flex space-x-3 mt-6"><button @click="showExpenseModal = false" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold">取消</button><button @click="addExpense" class="flex-1 py-3 rounded-xl bg-sakura-dark text-white font-bold">儲存</button></div>
+            <div class="flex space-x-3 mt-6"><button @click="showExpenseModal = false" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-500 font-bold">取消</button><button @click="addExpense" class="flex-1 py-3 rounded-xl bg-sakura-dark text-white font-bold">儲存並同步</button></div>
         </div>
     </div>
 
@@ -370,6 +383,10 @@
 
 <script>
 const { createApp, ref, computed, onMounted } = Vue;
+
+// 您的雲端廚房網址
+const API_URL = 'https://script.google.com/macros/s/AKfycbxrBVZlQCo_WKcOXnGYJoe368EBoCpqIyMhu2r0VZZZtOmYGYEyqdm2xzQMSNNsEZZm/exec';
+
 createApp({
     setup() {
         const EXCHANGE_RATE = ref(0.215);
@@ -377,7 +394,6 @@ createApp({
         const dates = ref([{ dateStr: '04/09', weekday: 'Thu' }, { dateStr: '04/10', weekday: 'Fri' }, { dateStr: '04/11', weekday: 'Sat' }, { dateStr: '04/12', weekday: 'Sun' }, { dateStr: '04/13', weekday: 'Mon' }]);
         const selectedDateIndex = ref(0);
         
-        // 預設顯示載入中狀態
         const weatherData = ref({ icon: 'fa-solid fa-spinner fa-spin', temp: '--', feel: '--', desc: '載入天氣中...' });
         
         const itineraryData = ref([
@@ -392,9 +408,11 @@ createApp({
         ]);
 
         const shoppingList = ref([]);
-        const expenses = ref([{ name: '柚子元晚餐', amount: 8500, category: 'food', date: '2026-04-09', payment: '現金', currency: 'JPY', payer: '媽媽', splitters: ['媽媽', '榆', '羚'] }]);
+        const expenses = ref([]); // 預設清空，等雲端抓資料
+        const isLoadingExpenses = ref(false); // 控制載入動畫
+
         const currentItinerary = computed(() => itineraryData.value[selectedDateIndex.value] || []);
-        const totalExpensesJPY = computed(() => expenses.value.reduce((s, e) => s + (e.currency === 'JPY' ? e.amount : Math.round(e.amount / EXCHANGE_RATE.value)), 0));
+        const totalExpensesJPY = computed(() => expenses.value.reduce((s, e) => s + (e.currency === 'JPY' ? Number(e.amount) : Math.round(Number(e.amount) / EXCHANGE_RATE.value)), 0));
         const totalExpensesTWD = computed(() => Math.round(totalExpensesJPY.value * EXCHANGE_RATE.value));
 
         const showItineraryModal = ref(false);
@@ -441,25 +459,64 @@ createApp({
         const handleImageUpload = (e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = (ev) => newShoppingItem.value.image = ev.target.result; r.readAsDataURL(f); } };
         const addShoppingItem = () => { if(newShoppingItem.value.name) { shoppingList.value.push({ ...newShoppingItem.value }); showShoppingModal.value = false; } };
         const removeShoppingItem = (i) => shoppingList.value.splice(i, 1);
-        const addExpense = () => { if(newExpense.value.name && newExpense.value.amount) { expenses.value.unshift({ ...newExpense.value }); showExpenseModal.value = false; } };
-        const removeExpense = (i) => expenses.value.splice(i, 1);
 
-        // ★ 串接當地即時天氣 API (京都) ★
+        // ★ 抓取雲端花費資料 ★
+        const fetchExpenses = async () => {
+            isLoadingExpenses.value = true;
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                // 把雲端資料反轉，讓最新填寫的顯示在最上面
+                expenses.value = data.reverse();
+            } catch (error) {
+                console.error("抓取帳本失敗", error);
+            } finally {
+                isLoadingExpenses.value = false;
+            }
+        };
+
+        // ★ 新增花費並同步至雲端 ★
+        const addExpense = async () => {
+            if(!newExpense.value.name || !newExpense.value.amount) return alert('請輸入名稱與金額');
+            if(newExpense.value.splitters.length === 0) return alert('請至少選擇一位共同分帳人');
+
+            // 準備要送給 Google 試算表的資料
+            const payload = {
+                id: Date.now(),
+                date: newExpense.value.date,
+                category: newExpense.value.category,
+                name: newExpense.value.name,
+                currency: newExpense.value.currency,
+                amount: newExpense.value.amount,
+                payer: newExpense.value.payer,
+                splitters: newExpense.value.splitters.join(', '), // 轉成文字存入雲端
+                payment: newExpense.value.payment
+            };
+
+            // 1. 先讓畫面立刻顯示 (Optimistic Update)
+            expenses.value.unshift(payload);
+            showExpenseModal.value = false;
+
+            // 2. 背景偷偷發送給 Google 試算表
+            try {
+                fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) {
+                console.error("上傳失敗", error);
+            }
+
+            // 3. 重置表單
+            newExpense.value = { currency: 'JPY', payer: '媽媽', splitters: ['媽媽', '榆', '羚'], payment: '現金', date: '2026-04-09' };
+        };
+
         const fetchWeather = async () => {
             try {
-                // Open-Meteo API: 取得京都 (緯度 35.0116, 經度 135.7681) 當下的氣溫與天氣代碼
                 const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=35.0116&longitude=135.7681&current=temperature_2m,apparent_temperature,weather_code&timezone=Asia%2FTokyo');
                 const data = await res.json();
-                const current = data.current;
-                
-                const temp = Math.round(current.temperature_2m);
-                const feel = Math.round(current.apparent_temperature);
-                const code = current.weather_code;
-                
-                let desc = '天氣';
-                let icon = 'fa-solid fa-cloud';
-
-                // 根據 WMO 天氣代碼判斷天氣狀況與圖示
+                const code = data.current.weather_code;
+                let desc = '天氣', icon = 'fa-solid fa-cloud';
                 if (code === 0) { desc = '晴天'; icon = 'fa-solid fa-sun text-orange-400'; }
                 else if (code <= 3) { desc = '多雲'; icon = 'fa-solid fa-cloud-sun text-blue-400'; }
                 else if (code <= 48) { desc = '霧氣'; icon = 'fa-solid fa-smog text-gray-400'; }
@@ -467,27 +524,26 @@ createApp({
                 else if (code <= 77) { desc = '下雪'; icon = 'fa-solid fa-snowflake text-blue-300'; }
                 else if (code <= 82) { desc = '陣雨'; icon = 'fa-solid fa-cloud-showers-heavy text-blue-600'; }
                 else { desc = '雷雨'; icon = 'fa-solid fa-cloud-bolt text-purple-500'; }
-
-                weatherData.value = { temp, feel, desc, icon };
+                weatherData.value = { temp: Math.round(data.current.temperature_2m), feel: Math.round(data.current.apparent_temperature), desc, icon };
             } catch (error) {
-                console.error("無法取得天氣資訊", error);
                 weatherData.value = { icon: 'fa-solid fa-cloud-sun', temp: '15', feel: '14', desc: '無法取得即時天氣' };
             }
         };
 
-        // 網頁載入完成時，自動執行抓取天氣的功能
+        // 網頁一打開，立刻去抓取天氣和雲端帳本
         onMounted(() => {
             fetchWeather();
+            fetchExpenses();
         });
 
         return {
             currentTab, dates, selectedDateIndex, weatherData, itineraryData, currentItinerary,
-            shoppingList, expenses, totalExpensesJPY, totalExpensesTWD, EXCHANGE_RATE, currencyInput, currencyResult, calculateCurrency,
+            shoppingList, expenses, isLoadingExpenses, totalExpensesJPY, totalExpensesTWD, EXCHANGE_RATE, currencyInput, currencyResult, calculateCurrency,
             showItineraryModal, showExpenseModal, showShoppingModal, isEditMode, showCustomAction, customActionData,
             newItinerary, newExpense, newShoppingItem, formatNumber,
             getCategoryColor, getCategoryIcon, getTransportIcon,
             openMap, triggerAction, handleAddClick, editItem, saveItineraryItem, moveItineraryUp, moveItineraryDown,
-            handleImageUpload, addShoppingItem, removeShoppingItem, addExpense, removeExpense
+            handleImageUpload, addShoppingItem, removeShoppingItem, addExpense, fetchExpenses
         };
     }
 }).mount('#app');
