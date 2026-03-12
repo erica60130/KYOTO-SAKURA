@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>三姊妹2026京都賞櫻</title>
 
-<link rel="apple-touch-icon" sizes="2048x2048" href="icon.jpg">
-<link rel="icon" sizes="2048x2048" href="icon.jpg">
+<link rel="apple-touch-icon" sizes="2048x2048" href="https://erica60130.github.io/KYOTO-SAKURA/icon.jpg">
+<link rel="icon" sizes="2048x2048" href="https://erica60130.github.io/KYOTO-SAKURA/icon.jpg">
 
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -39,7 +39,6 @@
         color: #4A4A4A;
     }
 
-    /* 頁首設計：圓弧銜接與負邊距 */
     .header-bg {
         background-color: #ffffff;
         position: relative;
@@ -52,7 +51,6 @@
     .header-image-container { width: 100%; height: 260px; }
     .header-image-container img { width: 100%; height: 100%; object-fit: cover; object-position: left center; }
 
-    /* 浮動 Tab 按鈕 */
     .side-tab-bar {
         position: absolute;
         bottom: 20px;
@@ -80,7 +78,6 @@
         transform: scale(1.1) translateY(-2px);
     }
 
-    /* 主內容區：向上拉動重疊 */
     .app-main {
         padding-top: 30px !important;
         margin-top: -30px;
@@ -102,7 +99,7 @@
 
 <div id="app" class="max-w-md mx-auto min-h-screen relative pb-24" v-cloak>
     <div class="header-bg">
-        <div class="header-image-container"><img src="123.jpg" alt="Kyoto Sakura"></div>
+        <div class="header-image-container"><img src="https://erica60130.github.io/KYOTO-SAKURA/123.jpg" alt="Kyoto Sakura"></div>
         <div class="side-tab-bar">
             <button @click="currentTab='itinerary'" :class="{active:currentTab==='itinerary'}" class="tab-button"><i class="fa-solid fa-map-location-dot"></i></button>
             <button @click="currentTab='info'" :class="{active:currentTab==='info'}" class="tab-button"><i class="fa-solid fa-circle-info"></i></button>
@@ -134,7 +131,7 @@
             </div>
 
             <div class="space-y-6">
-                <div v-for="(item, idx) in currentItinerary" :key="item.id" class="relative">
+                <div v-for="(item, idx) in currentItinerary" :key="item.id || idx" class="relative">
                     <div v-if="idx > 0" class="absolute -top-6 left-6 flex items-center text-[10px] font-bold text-gray-300">
                         <div class="h-6 w-0.5 bg-gray-100 mr-3"></div>
                         <i :class="getTransportIcon(item.transportType)" class="mr-1"></i> {{ item.travelTime || '15' }} min
@@ -164,7 +161,7 @@
                                 <p v-if="item.hours"><i class="fa-regular fa-clock mr-1 text-sakura-pink"></i> {{ item.hours }}</p>
                                 <p v-if="item.price"><i class="fa-solid fa-ticket mr-1 text-sakura-pink"></i> {{ item.price }}</p>
                             </div>
-                            <div v-if="item.customButtons" class="flex gap-2 mt-3">
+                            <div v-if="item.customButtons && Array.isArray(item.customButtons)" class="flex gap-2 mt-3">
                                 <button v-for="btn in item.customButtons" @click.stop="triggerAction(btn)" class="bg-sakura-bg text-sakura-dark text-[10px] px-3 py-1.5 rounded-full font-bold border border-sakura-pink/30 hover:bg-sakura-pink hover:text-white transition-colors">
                                     <i :class="btn.icon" class="mr-1"></i>{{ btn.label }}
                                 </button>
@@ -255,21 +252,45 @@
                     
                     <div class="flex items-center gap-4 mb-3">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 shadow-sm" :class="getCatColor(e.category)"><i :class="getCatIcon(e.category)"></i></div>
-                        <div class="flex-1">
-                            <div class="font-bold text-gray-800 leading-tight">{{e.name}}</div>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="font-bold text-gray-800 leading-tight truncate">{{e.name || '未命名項目'}}</div>
                             <div class="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">
-                                <span>{{e.date}}</span> <span>· {{e.payment}}</span> <span v-if="e.note" class="text-sakura-pink truncate block w-full mt-0.5">備註: {{e.note}}</span>
+                                <span>{{e.date}}</span> <span>· {{e.payment || '現金'}}</span> <span v-if="e.note" class="text-sakura-pink truncate block w-full mt-0.5">備註: {{e.note}}</span>
                             </div>
                         </div>
-                        <div class="text-right font-black text-lg text-sakura-dark">{{ e.currency === 'TWD' ? '$' : '¥' }}{{formatNumber(e.amount)}}</div>
+                        <div class="text-right font-black text-lg text-sakura-dark">{{ e.currency === 'TWD' ? '$' : '¥' }}{{formatNumber(e.amount || 0)}}</div>
                     </div>
                     
                     <div class="bg-sakura-bg/50 rounded-xl p-2.5 text-[10px] flex justify-between font-bold">
-                        <span class="text-sakura-dark">墊：{{e.payer}}</span>
-                        <span class="text-gray-400">分攤：{{e.splitters}}</span>
+                        <span class="text-sakura-dark">墊：{{e.payer || '無'}}</span>
+                        <span class="text-gray-400 truncate ml-2">分攤：{{e.splitters || '無'}}</span>
                     </div>
                 </div>
                 <div v-if="expenses.length === 0" class="text-center py-10 text-gray-200"><i class="fa-solid fa-file-invoice-dollar text-5xl mb-3"></i><p class="text-xs font-bold">尚無支出紀錄</p></div>
+            </div>
+
+            <div v-if="expenses && expenses.length > 0" class="mt-8 bg-white rounded-[35px] p-7 card-shadow border border-sakura-pink/20 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-sakura-pink/5 rounded-bl-full z-0"></div>
+                <h3 class="font-bold text-gray-800 mb-5 flex items-center relative z-10">
+                    <i class="fa-solid fa-scale-balanced text-sakura-dark mr-2 text-xl"></i> 行程總結算 (日幣)
+                </h3>
+                
+                <div class="space-y-3 relative z-10">
+                    <div v-for="person in settlement" :key="person.name" class="flex justify-between items-center bg-gray-50/80 p-4 rounded-2xl border border-gray-100">
+                        <span class="font-bold text-gray-700 text-sm flex items-center">
+                            <div class="w-2 h-2 rounded-full mr-2" :class="person.balance >= 0 ? 'bg-green-400' : 'bg-red-400'"></div>
+                            {{ person.name }}
+                        </span>
+                        <span class="font-black text-xl tracking-wide" :class="person.balance >= 0 ? 'text-green-500' : 'text-red-500'">
+                            {{ person.balance >= 0 ? '+' : '' }}{{ formatNumber(person.balance) }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex gap-2 justify-center">
+                    <span class="text-[10px] font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">+ 代表可收回代墊款</span>
+                    <span class="text-[10px] font-bold bg-red-50 text-red-500 px-3 py-1 rounded-full">- 代表需拿出錢補貼</span>
+                </div>
             </div>
         </div>
     </main>
@@ -352,6 +373,7 @@
 </div>
 
 <script>
+// 請替換成你自己的 Apps Script 網址
 const API = 'https://script.google.com/macros/s/AKfycbxrBVZlQCo_WKcOXnGYJoe368EBoCpqIyMhu2r0VZZZtOmYGYEyqdm2xzQMSNNsEZZm/exec';
 const { createApp, ref, computed, onMounted } = Vue;
 
@@ -370,6 +392,7 @@ createApp({
         
         const dates = ref([{dateStr:'04/09',weekday:'Thu'},{dateStr:'04/10',weekday:'Fri'},{dateStr:'04/11',weekday:'Sat'},{dateStr:'04/12',weekday:'Sun'},{dateStr:'04/13',weekday:'Mon'}]);
         
+        // 預設行程資料，若雲端抓取成功會被覆蓋
         const itineraryData = ref([
             [
                 { id:101, name:'星宇航空 JX822', category:'flight', startTime:'08:30', note:'手提7KG *1 / 託運23KG *1' },
@@ -394,12 +417,46 @@ createApp({
         const newItem = ref({ name:'', startTime:'', category:'sightseeing', transportType:'walk', note:'', travelTime:'' });
         const newShop = ref({ name:'', image:null });
 
-        const currentItinerary = computed(() => itineraryData.value[selectedDateIndex.value] || []);
+        const currentItinerary = computed(() => {
+            return Array.isArray(itineraryData.value) ? (itineraryData.value[selectedDateIndex.value] || []) : [];
+        });
         
-        const totalJPY = computed(() => expenses.value.reduce((sum, e) => {
-            const amt = Number(e.amount || 0);
-            return sum + (e.currency === 'TWD' ? Math.round(amt / 0.215) : amt);
-        }, 0));
+        const totalJPY = computed(() => {
+            if (!Array.isArray(expenses.value)) return 0;
+            return expenses.value.reduce((sum, e) => {
+                const amt = Number(e.amount || 0);
+                return sum + (e.currency === 'TWD' ? Math.round(amt / 0.215) : amt);
+            }, 0);
+        });
+
+        // 自動分帳結算計算邏輯 (加入防當機保護)
+        const settlement = computed(() => {
+            const members = ['媽媽', '榆', '羚'];
+            const balances = { '媽媽': 0, '榆': 0, '羚': 0 };
+
+            if (Array.isArray(expenses.value)) {
+                expenses.value.forEach(e => {
+                    const amt = Number(e.amount || 0);
+                    const actualAmt = e.currency === 'TWD' ? Math.round(amt / 0.215) : amt; 
+                    
+                    if (balances[e.payer] !== undefined) balances[e.payer] += actualAmt;
+                    
+                    let splitters = members;
+                    if (e.splitters) {
+                        splitters = typeof e.splitters === 'string' ? e.splitters.split(',').map(s=>s.trim()) : (Array.isArray(e.splitters) ? e.splitters : members);
+                    }
+                    
+                    if (splitters.length > 0) {
+                        const splitAmt = actualAmt / splitters.length;
+                        splitters.forEach(person => {
+                            if (balances[person] !== undefined) balances[person] -= splitAmt;
+                        });
+                    }
+                });
+            }
+
+            return members.map(name => ({ name, balance: Math.round(balances[name]) }));
+        });
 
         const getTabIcon = (t) => ({itinerary:'fa-solid fa-map-location-dot',info:'fa-solid fa-circle-info',shopping:'fa-solid fa-basket-shopping',expenses:'fa-solid fa-coins'}[t]);
         const getCatIcon = (c) => ({sightseeing:'fa-solid fa-camera',food:'fa-solid fa-utensils',accommodation:'fa-solid fa-bed',transport:'fa-solid fa-train',flight:'fa-solid fa-plane',飲食:'fa-solid fa-utensils',交通:'fa-solid fa-train',購物:'fa-solid fa-bag-shopping',門票:'fa-solid fa-ticket',其他:'fa-solid fa-star'}[c] || 'fa-solid fa-star');
@@ -407,9 +464,8 @@ createApp({
         const getTransportIcon = (t) => ({walk:'fa-solid fa-person-walking',car:'fa-solid fa-car-side',public:'fa-solid fa-train-subway',flight:'fa-solid fa-plane'}[t] || 'fa-solid fa-arrow-down');
         const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '0';
         
-        // ★ 真正修正的 Google Maps URL ★
         const openMap = (query) => { 
-            if(query) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank'); 
+            if(query) window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query), '_blank'); 
         };
         
         const triggerAction = (btn) => { actionData.value = btn; actionModal.value = true; };
@@ -417,25 +473,62 @@ createApp({
         const openModal = () => { isEdit.value = false; modal.value = true; };
         const editItem = (item, idx) => { isEdit.value = true; editIdx.value = idx; newItem.value = {...item}; modal.value = true; };
 
+        // 本地儲存工具
+        const saveToLocal = (key, data) => { localStorage.setItem(key, JSON.stringify(data)); };
+        const loadFromLocal = (key) => {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : null;
+            } catch(e) { return null; }
+        };
+
         const handleSave = async () => {
             if (currentTab.value === 'expenses') {
                 if(!newExp.value.name || !newExp.value.amount) return alert('請輸入花費名稱和金額喔！');
                 const payload = { 
                     ...newExp.value, 
                     id: Date.now(), 
-                    splitters: newExp.value.splittersArr.join(', ') 
+                    splitters: newExp.value.splittersArr.join(', '),
+                    sheetType: 'expenses'
                 };
+                
+                if(!Array.isArray(expenses.value)) expenses.value = [];
                 expenses.value.unshift(payload);
-                try { fetch(API, { method: 'POST', body: JSON.stringify(payload) }); } catch (e) {}
+                saveToLocal('kyoto_expenses', expenses.value);
+
+                try { fetch(API, { method: 'POST', body: JSON.stringify(payload) }); } 
+                catch (e) { console.log('離線儲存成功'); }
+                
                 newExp.value = { name:'', amount:'', payer:'媽媽', category:'飲食', date: getToday(), splittersArr:['媽媽','榆','羚'], currency: 'JPY', payment: '現金', note: '' };
             } else if (currentTab.value === 'itinerary') {
                 if(!newItem.value.name) return;
-                if(isEdit.value) itineraryData.value[selectedDateIndex.value][editIdx.value] = {...newItem.value};
-                else itineraryData.value[selectedDateIndex.value].push({ ...newItem.value, id: Date.now() });
+                
+                const payload = { 
+                    ...newItem.value, 
+                    id: Date.now(),
+                    dayIndex: selectedDateIndex.value, 
+                    sheetType: 'itinerary' 
+                };
+
+                if(!Array.isArray(itineraryData.value[selectedDateIndex.value])) itineraryData.value[selectedDateIndex.value] = [];
+
+                if(isEdit.value) {
+                    itineraryData.value[selectedDateIndex.value][editIdx.value] = {...payload};
+                } else {
+                    itineraryData.value[selectedDateIndex.value].push({...payload});
+                }
+                
+                saveToLocal('kyoto_itinerary', itineraryData.value);
+
+                try { fetch(API, { method: 'POST', body: JSON.stringify(payload) }); } 
+                catch (e) { console.log('離線儲存成功'); }
+
                 itineraryData.value[selectedDateIndex.value].sort((a,b) => (a.startTime||'24:00').localeCompare(b.startTime||'24:00'));
             } else if (currentTab.value === 'shopping') {
                 if(!newShop.value.name) return;
+                if(!Array.isArray(shoppingList.value)) shoppingList.value = [];
                 shoppingList.value.push({...newShop.value});
+                saveToLocal('kyoto_shopping', shoppingList.value);
                 newShop.value = { name:'', image:null };
             }
             modal.value = false;
@@ -444,6 +537,7 @@ createApp({
         const handleDelete = () => {
             if(confirm('確定要刪除這個行程嗎？')) {
                 itineraryData.value[selectedDateIndex.value].splice(editIdx.value, 1);
+                saveToLocal('kyoto_itinerary', itineraryData.value);
                 modal.value = false;
             }
         };
@@ -454,6 +548,7 @@ createApp({
             const temp = list[idx];
             list[idx] = list[idx+dir];
             list[idx+dir] = temp;
+            saveToLocal('kyoto_itinerary', itineraryData.value);
         };
 
         const handleImg = (e) => {
@@ -467,17 +562,48 @@ createApp({
 
         const fetchExpenses = async () => {
             loadingExp.value = true;
+            const localData = loadFromLocal('kyoto_expenses');
+            if (Array.isArray(localData)) expenses.value = localData;
+
             try {
-                const res = await fetch(API);
+                const res = await fetch(`${API}?type=expenses`);
                 const data = await res.json();
-                if(Array.isArray(data)) expenses.value = data.reverse();
-            } catch (e) {}
+                if(Array.isArray(data) && data.length > 0) {
+                    expenses.value = data.reverse();
+                    saveToLocal('kyoto_expenses', expenses.value); 
+                }
+            } catch (e) { console.log('使用本地暫存資料'); }
             loadingExp.value = false;
+        };
+
+        const fetchItinerary = async () => {
+            const localItinerary = loadFromLocal('kyoto_itinerary');
+            if (Array.isArray(localItinerary) && localItinerary.length === 5) itineraryData.value = localItinerary;
+
+            try {
+                const res = await fetch(`${API}?type=itinerary`);
+                const data = await res.json();
+                if(Array.isArray(data) && data.length > 0) {
+                    const newItinerary = [[], [], [], [], []];
+                    data.forEach(item => {
+                        const day = Number(item.dayIndex);
+                        if(!isNaN(day) && day >= 0 && day <= 4) {
+                            newItinerary[day].push(item);
+                        }
+                    });
+                    newItinerary.forEach(dayList => {
+                        dayList.sort((a,b) => (a.startTime||'24:00').localeCompare(b.startTime||'24:00'));
+                    });
+                    itineraryData.value = newItinerary;
+                    saveToLocal('kyoto_itinerary', newItinerary);
+                }
+            } catch (e) { console.log('使用本地暫存行程'); }
         };
 
         const removeExpense = (idx) => {
             if(confirm('手機端刪除僅為隱藏，徹底刪除請至試算表。確認隱藏？')) {
                 expenses.value.splice(idx, 1);
+                saveToLocal('kyoto_expenses', expenses.value);
             }
         };
 
@@ -494,14 +620,21 @@ createApp({
             } catch (e) { weatherData.value = { icon: 'fa-solid fa-cloud-sun', temp: '18', feel: '17', desc: '京都' }; }
         };
 
-        onMounted(() => { fetchWeather(); fetchExpenses(); });
+        onMounted(() => { 
+            fetchWeather(); 
+            fetchExpenses(); 
+            fetchItinerary();
+            
+            const localShop = loadFromLocal('kyoto_shopping');
+            if (Array.isArray(localShop)) shoppingList.value = localShop;
+        });
 
         return { 
             currentTab, selectedDateIndex, dates, itineraryData, shoppingList, expenses, 
             currentItinerary, totalJPY, currencyInput, loadingExp, modal, isEdit,
-            newExp, newItem, newShop, actionModal, actionData, weatherData,
+            newExp, newItem, newShop, actionModal, actionData, weatherData, settlement,
             getTabIcon, getCatIcon, getCatColor, getTransportIcon, formatNumber, 
-            openMap, triggerAction, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, fetchExpenses, removeExpense 
+            openMap, triggerAction, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, fetchExpenses, fetchItinerary, removeExpense 
         };
     }
 }).mount('#app');
