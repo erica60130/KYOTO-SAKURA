@@ -352,13 +352,12 @@
 </div>
 
 <script>
-// 您的雲端資料庫 API
 const API = 'https://script.google.com/macros/s/AKfycbxrBVZlQCo_WKcOXnGYJoe368EBoCpqIyMhu2r0VZZZtOmYGYEyqdm2xzQMSNNsEZZm/exec';
 const { createApp, ref, computed, onMounted } = Vue;
 
 createApp({
     setup() {
-        const currentTab = ref('expenses'); // 預設跳到花費方便您測試
+        const currentTab = ref('itinerary'); 
         const selectedDateIndex = ref(0);
         const modal = ref(false);
         const isEdit = ref(false);
@@ -385,21 +384,18 @@ createApp({
         const shoppingList = ref([]);
         const expenses = ref([]);
         
-        // 取得當地今日日期 (格式 YYYY-MM-DD)
         const getToday = () => {
             const d = new Date();
             const offset = d.getTimezoneOffset() * 60000;
             return new Date(d.getTime() - offset).toISOString().slice(0, 10);
         };
 
-        // 表單物件 (花費表單升級)
         const newExp = ref({ name:'', amount:'', payer:'媽媽', category:'飲食', date: getToday(), splittersArr:['媽媽','榆','羚'], currency: 'JPY', payment: '現金', note: '' });
         const newItem = ref({ name:'', startTime:'', category:'sightseeing', transportType:'walk', note:'', travelTime:'' });
         const newShop = ref({ name:'', image:null });
 
         const currentItinerary = computed(() => itineraryData.value[selectedDateIndex.value] || []);
         
-        // 總花費計算：如果記帳選台幣(TWD)，會自動除以 0.215 換算回日幣加進總和
         const totalJPY = computed(() => expenses.value.reduce((sum, e) => {
             const amt = Number(e.amount || 0);
             return sum + (e.currency === 'TWD' ? Math.round(amt / 0.215) : amt);
@@ -411,7 +407,11 @@ createApp({
         const getTransportIcon = (t) => ({walk:'fa-solid fa-person-walking',car:'fa-solid fa-car-side',public:'fa-solid fa-train-subway',flight:'fa-solid fa-plane'}[t] || 'fa-solid fa-arrow-down');
         const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '0';
         
-        const openMap = (query) => { if(query) window.open(`http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(query)}`, '_blank'); };
+        // ★ 真正修正的 Google Maps URL ★
+        const openMap = (query) => { 
+            if(query) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank'); 
+        };
+        
         const triggerAction = (btn) => { actionData.value = btn; actionModal.value = true; };
         
         const openModal = () => { isEdit.value = false; modal.value = true; };
@@ -420,20 +420,14 @@ createApp({
         const handleSave = async () => {
             if (currentTab.value === 'expenses') {
                 if(!newExp.value.name || !newExp.value.amount) return alert('請輸入花費名稱和金額喔！');
-                
-                // 為了不讓您重新修改 Google Apps Script，我們把"備註"跟"名稱"稍微合併送到雲端
                 const payload = { 
                     ...newExp.value, 
                     id: Date.now(), 
                     splitters: newExp.value.splittersArr.join(', ') 
                 };
-                
                 expenses.value.unshift(payload);
                 try { fetch(API, { method: 'POST', body: JSON.stringify(payload) }); } catch (e) {}
-                
-                // 清空重置表單
                 newExp.value = { name:'', amount:'', payer:'媽媽', category:'飲食', date: getToday(), splittersArr:['媽媽','榆','羚'], currency: 'JPY', payment: '現金', note: '' };
-                
             } else if (currentTab.value === 'itinerary') {
                 if(!newItem.value.name) return;
                 if(isEdit.value) itineraryData.value[selectedDateIndex.value][editIdx.value] = {...newItem.value};
@@ -500,12 +494,7 @@ createApp({
             } catch (e) { weatherData.value = { icon: 'fa-solid fa-cloud-sun', temp: '18', feel: '17', desc: '京都' }; }
         };
 
-        onMounted(() => { 
-            fetchWeather(); 
-            fetchExpenses(); 
-            // 預設將畫面停留回行程表
-            setTimeout(() => currentTab.value = 'itinerary', 100); 
-        });
+        onMounted(() => { fetchWeather(); fetchExpenses(); });
 
         return { 
             currentTab, selectedDateIndex, dates, itineraryData, shoppingList, expenses, 
