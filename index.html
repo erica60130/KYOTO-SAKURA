@@ -32,6 +32,12 @@
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
     [v-cloak] { display: none !important; }
     
+    html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden; 
+    }
+
     body {
         background-color: #FFF5F7; 
         font-family: 'Noto Sans TC', sans-serif;
@@ -39,7 +45,16 @@
         color: #4A4A4A;
     }
 
+    #app {
+        height: 100%;
+        height: 100dvh; 
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
     .header-bg {
+        flex-shrink: 0;
         background-color: #ffffff;
         position: relative;
         border-bottom-left-radius: 40px;
@@ -48,6 +63,7 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         overflow: hidden;
     }
+    
     .header-image-container { width: 100%; height: 260px; }
     .header-image-container img { width: 100%; height: 100%; object-fit: cover; object-position: left center; }
 
@@ -79,6 +95,9 @@
     }
 
     .app-main {
+        flex: 1;
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch; 
         padding-top: 30px !important;
         margin-top: -30px;
         background-color: #ffffff;
@@ -86,7 +105,7 @@
         border-top-right-radius: 40px;
         position: relative;
         z-index: 5;
-        min-height: calc(100vh - 230px);
+        padding-bottom: 120px !important; 
     }
 
     .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -97,7 +116,7 @@
 </head>
 <body>
 
-<div id="app" class="max-w-md mx-auto min-h-screen relative pb-24" v-cloak>
+<div id="app" class="max-w-md mx-auto w-full" v-cloak>
     <div class="header-bg">
         <div class="header-image-container"><img src="https://erica60130.github.io/KYOTO-SAKURA/123.jpg" alt="Kyoto Sakura"></div>
         <div class="side-tab-bar">
@@ -132,11 +151,7 @@
 
             <div class="space-y-6">
                 <div v-for="(item, idx) in currentItinerary" :key="item.id || idx" class="relative">
-                    <div v-if="idx > 0" class="absolute -top-6 left-6 flex items-center text-[10px] font-bold text-gray-300">
-                        <div class="h-6 w-0.5 bg-gray-100 mr-3"></div>
-                        <i :class="getTransportIcon(item.transportType)" class="mr-1"></i> {{ item.travelTime || '15' }} min
-                    </div>
-
+                    
                     <div v-if="selectedDateIndex === 0 && item.category === 'flight'" class="bg-ice-blue/60 rounded-[30px] p-5 border border-deep-ice-blue/30 card-shadow cursor-pointer" @click="openMap(item.name)">
                         <div class="flex justify-between items-center mb-4">
                             <span class="bg-deep-ice-blue text-white text-[10px] px-3 py-1 rounded-full font-bold">去程航班</span>
@@ -225,15 +240,19 @@
 
             <div class="bg-white rounded-[35px] p-6 card-shadow border border-sakura-pink/10">
                 <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
-                    <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-hotel text-indigo-500 mr-2"></i> 住宿與地圖</h3>
-                    <button @click="editHotel" class="text-[10px] bg-indigo-50 text-indigo-500 px-3 py-1.5 rounded-full font-bold hover:bg-indigo-100 transition-colors shadow-sm"><i class="fa-solid fa-pen mr-1"></i>設定地點</button>
+                    <h3 class="font-bold text-gray-800 flex items-center"><i class="fa-solid fa-hotel text-indigo-500 mr-2"></i> 住宿地點</h3>
+                    <button @click="editHotel" class="text-[10px] bg-indigo-50 text-indigo-500 px-3 py-1.5 rounded-full font-bold hover:bg-indigo-100 transition-colors shadow-sm"><i class="fa-solid fa-pen mr-1"></i>編輯</button>
                 </div>
-                <div @click="openMap(hotelName)" class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl cursor-pointer hover:bg-gray-100 transition-colors">
-                    <div class="overflow-hidden pr-3">
-                        <b class="text-gray-700 block truncate">{{ hotelName }}</b>
-                        <p class="text-[10px] text-gray-400 mt-1">點擊開啟導航連結</p>
+                <div class="bg-gray-50 p-4 rounded-2xl">
+                    <b class="text-gray-700 block mb-3 leading-tight">{{ hotelData.name || '尚未設定住宿' }}</b>
+                    <div class="flex gap-2">
+                        <a v-if="hotelData.link" :href="hotelData.link" target="_blank" class="flex-1 flex justify-center items-center text-[10px] bg-blue-50 text-blue-500 border border-blue-100 py-2.5 rounded-xl font-bold hover:bg-blue-500 hover:text-white transition-colors shadow-sm">
+                            <i class="fa-solid fa-link mr-1.5"></i> 飯店網頁
+                        </a>
+                        <button @click="openMap(hotelData.name)" class="flex-1 flex justify-center items-center text-[10px] bg-indigo-50 text-indigo-500 border border-indigo-100 py-2.5 rounded-xl font-bold hover:bg-indigo-500 hover:text-white transition-colors shadow-sm">
+                            <i class="fa-solid fa-location-arrow mr-1.5"></i> 導航地圖
+                        </button>
                     </div>
-                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-indigo-500 shadow-sm shrink-0"><i class="fa-solid fa-location-arrow"></i></div>
                 </div>
             </div>
 
@@ -455,18 +474,16 @@ createApp({
         const actionData = ref({});
         const weatherData = ref({ icon: 'fa-solid fa-spinner fa-spin', temp: '--', feel: '--', desc: '載入中' });
         
-        const hotelName = ref('京都府京都市 (暫定)');
-
+        const hotelData = ref({ name: '京都府京都市 (暫定)', link: '' });
         const dates = ref([{dateStr:'04/09',weekday:'Thu'},{dateStr:'04/10',weekday:'Fri'},{dateStr:'04/11',weekday:'Sat'},{dateStr:'04/12',weekday:'Sun'},{dateStr:'04/13',weekday:'Mon'}]);
         
-        // 已移除寫死的 Haruka 車票與鴨川地圖
         const itineraryData = ref([
             [
                 { id:101, name:'星宇航空 JX822', category:'flight', startTime:'08:30', note:'手提7KG *1 / 託運23KG *1' },
-                { id:102, name:'抵達關西機場 KIX', category:'transport', startTime:'12:15', transportType:'public', travelTime:'180', note:'準備搭乘 Haruka (請自行新增車票附件)' },
-                { id:103, name:'京都車站', category:'transport', startTime:'13:30', transportType:'public', travelTime:'80' },
-                { id:104, name:'鴨川賞櫻', category:'sightseeing', startTime:'15:30', transportType:'walk', travelTime:'20' },
-                { id:105, name:'柚子元 (晚餐)', category:'food', startTime:'18:00', transportType:'walk', travelTime:'15', note:'推薦柚子鍋，先斗町附近', hours:'17:00-23:00' }
+                { id:102, name:'抵達關西機場 KIX', category:'transport', startTime:'12:15', transportType:'public', note:'準備搭乘 Haruka (請自行新增車票附件)' },
+                { id:103, name:'京都車站', category:'transport', startTime:'13:30', transportType:'public' },
+                { id:104, name:'鴨川賞櫻', category:'sightseeing', startTime:'15:30', transportType:'walk' },
+                { id:105, name:'柚子元 (晚餐)', category:'food', startTime:'18:00', transportType:'walk', note:'推薦柚子鍋，先斗町附近', hours:'17:00-23:00' }
             ],
             [], [], [], []
         ]);
@@ -481,10 +498,35 @@ createApp({
         };
 
         const newExp = ref({ name:'', amount:'', payer:'媽媽', category:'飲食', date: getToday(), splittersArr:['媽媽','榆','羚'], currency: 'JPY', payment: '現金', note: '' });
-        
-        // 新增：包含了自訂附件相關變數
         const newItem = ref({ name:'', startTime:'', category:'sightseeing', transportType:'walk', note:'', travelTime:'', image:null, link:'', attachmentType:'', attachmentTitle:'', attachmentImage:null, attachmentDesc:'' });
         const newShop = ref({ name:'', image:null });
+
+        // 修復時間亂碼的過濾器
+        const formatTime = (t) => {
+            if (!t) return '';
+            if (typeof t === 'string' && t.includes('T')) {
+                const d = new Date(t);
+                if (!isNaN(d.getTime())) {
+                    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+                }
+            }
+            return String(t);
+        };
+
+        // 修復日期亂碼的過濾器
+        const formatDate = (dStr) => {
+            if (!dStr) return '';
+            if (typeof dStr === 'string' && dStr.includes('T')) {
+                const d = new Date(dStr);
+                if (!isNaN(d.getTime())) {
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                }
+            }
+            return dStr;
+        };
 
         const currentItinerary = computed(() => {
             return Array.isArray(itineraryData.value) ? (itineraryData.value[selectedDateIndex.value] || []) : [];
@@ -531,7 +573,6 @@ createApp({
         const getCatColor = (c) => ({sightseeing:'bg-green-500',food:'bg-orange-400',accommodation:'bg-indigo-500',transport:'bg-deep-ice-blue',flight:'bg-blue-600',飲食:'bg-orange-400',交通:'bg-deep-ice-blue',購物:'bg-pink-400',門票:'bg-green-500',其他:'bg-gray-400'}[c] || 'bg-gray-400');
         const getTransportIcon = (t) => ({walk:'fa-solid fa-person-walking',car:'fa-solid fa-car-side',public:'fa-solid fa-train-subway',flight:'fa-solid fa-plane'}[t] || 'fa-solid fa-arrow-down');
         
-        // 新增：動態附件的圖示判斷
         const getAttachmentIcon = (type) => {
             if(type === 'ticket') return 'fa-solid fa-ticket';
             if(type === 'qrcode') return 'fa-solid fa-qrcode';
@@ -544,7 +585,6 @@ createApp({
             if(query) window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query), '_blank'); 
         };
         
-        // 新增：觸發自訂附件視窗
         const triggerAttachment = (item) => { 
             actionData.value = {
                 title: item.attachmentTitle,
@@ -571,10 +611,12 @@ createApp({
         };
 
         const editHotel = () => {
-            const input = prompt('請輸入你們的住宿飯店名稱或地址\n(例如：京都十字飯店 或 具體地址)：', hotelName.value);
-            if (input !== null && input.trim() !== '') {
-                hotelName.value = input.trim();
-                saveToLocal('kyoto_hotel', hotelName.value);
+            const nameInput = prompt('請輸入你們的住宿飯店名稱或地址\n(例如：京都十字飯店)：', hotelData.value.name);
+            if (nameInput !== null && nameInput.trim() !== '') {
+                const linkInput = prompt('請貼上飯店網頁的完整連結 (選填)：\n(如果沒有網頁，可以直接按確定跳過)', hotelData.value.link);
+                hotelData.value.name = nameInput.trim();
+                hotelData.value.link = linkInput ? linkInput.trim() : '';
+                saveToLocal('kyoto_hotel_data', hotelData.value);
             }
         };
 
@@ -634,7 +676,7 @@ createApp({
         };
 
         const handleDelete = () => {
-            if(confirm('確定要刪除這個行程嗎？')) {
+            if(confirm('確定要刪除這個項目嗎？')) {
                 itineraryData.value[selectedDateIndex.value].splice(editIdx.value, 1);
                 saveToLocal('kyoto_itinerary', itineraryData.value);
                 modal.value = false;
@@ -668,7 +710,6 @@ createApp({
             }
         };
 
-        // 新增：專門處理附件圖片上傳的函式
         const handleAttachmentImg = (e) => {
             const file = e.target.files[0];
             if(file) {
@@ -681,12 +722,16 @@ createApp({
         const fetchExpenses = async () => {
             loadingExp.value = true;
             const localData = loadFromLocal('kyoto_expenses');
-            if (Array.isArray(localData)) expenses.value = localData;
+            if (Array.isArray(localData)) {
+                localData.forEach(e => e.date = formatDate(e.date));
+                expenses.value = localData;
+            }
 
             try {
                 const res = await fetch(`${API}?type=expenses`);
                 const data = await res.json();
                 if(Array.isArray(data) && data.length > 0) {
+                    data.forEach(e => e.date = formatDate(e.date));
                     expenses.value = data.reverse();
                     saveToLocal('kyoto_expenses', expenses.value); 
                 }
@@ -696,7 +741,11 @@ createApp({
 
         const fetchItinerary = async () => {
             const localItinerary = loadFromLocal('kyoto_itinerary');
-            if (Array.isArray(localItinerary) && localItinerary.length === 5) itineraryData.value = localItinerary;
+            if (Array.isArray(localItinerary) && localItinerary.length === 5) {
+                // 清理本地暫存內的亂碼
+                localItinerary.forEach(day => day.forEach(i => i.startTime = formatTime(i.startTime)));
+                itineraryData.value = localItinerary;
+            }
 
             try {
                 const res = await fetch(`${API}?type=itinerary`);
@@ -704,6 +753,8 @@ createApp({
                 if(Array.isArray(data) && data.length > 0) {
                     const newItinerary = [[], [], [], [], []];
                     data.forEach(item => {
+                        // 雲端資料時間過濾還原
+                        item.startTime = formatTime(item.startTime);
                         const day = Number(item.dayIndex);
                         if(!isNaN(day) && day >= 0 && day <= 4) {
                             newItinerary[day].push(item);
@@ -746,17 +797,22 @@ createApp({
             const localShop = loadFromLocal('kyoto_shopping');
             if (Array.isArray(localShop)) shoppingList.value = localShop;
 
-            const localHotel = loadFromLocal('kyoto_hotel');
-            if (localHotel) hotelName.value = localHotel;
+            const localHotelObj = loadFromLocal('kyoto_hotel_data');
+            if (localHotelObj && typeof localHotelObj === 'object') {
+                hotelData.value = localHotelObj;
+            } else {
+                const oldHotel = loadFromLocal('kyoto_hotel');
+                if (oldHotel) hotelData.value.name = oldHotel;
+            }
         });
 
         return { 
             currentTab, selectedDateIndex, dates, itineraryData, shoppingList, expenses, 
             currentItinerary, totalJPY, currencyInput, loadingExp, modal, isEdit,
             newExp, newItem, newShop, actionModal, actionData, weatherData, settlement,
-            hotelName, 
-            getTabIcon, getCatIcon, getCatColor, getTransportIcon, getAttachmentIcon, formatNumber, // 新增 getAttachmentIcon
-            openMap, triggerAttachment, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, handleItineraryImg, handleAttachmentImg, fetchExpenses, fetchItinerary, removeExpense, editHotel // 新增 handleAttachmentImg, triggerAttachment
+            hotelData, 
+            getTabIcon, getCatIcon, getCatColor, getTransportIcon, getAttachmentIcon, formatNumber, formatTime, formatDate,
+            openMap, triggerAttachment, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, handleItineraryImg, handleAttachmentImg, fetchExpenses, fetchItinerary, removeExpense, editHotel 
         };
     }
 }).mount('#app');
