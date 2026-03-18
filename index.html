@@ -111,7 +111,9 @@
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .card-shadow { box-shadow: 0 8px 25px rgba(255, 183, 197, 0.12); }
     .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -152,23 +154,23 @@
             <div class="space-y-6">
                 <div v-for="(item, idx) in currentItinerary" :key="item.id || idx" class="relative">
                     
-                    <div v-if="selectedDateIndex === 0 && item.category === 'flight'" class="bg-ice-blue/60 rounded-[30px] p-5 border border-deep-ice-blue/30 card-shadow cursor-pointer" @click="openMap(item.name)">
+                    <div v-if="item.category === 'flight'" class="bg-ice-blue/60 rounded-[30px] p-5 border border-deep-ice-blue/30 card-shadow cursor-pointer" @click="openGuide(item, idx)">
                         <div class="flex justify-between items-center mb-4">
-                            <span class="bg-deep-ice-blue text-white text-[10px] px-3 py-1 rounded-full font-bold">去程航班</span>
-                            <span class="text-xs font-bold text-blue-900">JX822</span>
+                            <span class="bg-deep-ice-blue text-white text-[10px] px-3 py-1 rounded-full font-bold">航班資訊</span>
+                            <span class="text-xs font-bold text-blue-900">{{ item.name }}</span>
                         </div>
                         <div class="flex justify-between items-center text-blue-900 font-bold text-xl px-2">
-                            <span>TPE <small class="text-xs block font-normal text-blue-400">08:30</small></span>
+                            <span>TPE <small class="text-xs block font-normal text-blue-400">{{ formatTime(item.startTime) }}</small></span>
                             <i class="fa-solid fa-plane text-deep-ice-blue text-2xl"></i>
-                            <span>KIX <small class="text-xs block font-normal text-blue-400">12:15</small></span>
+                            <span>KIX <small class="text-xs block font-normal text-blue-400">抵達</small></span>
                         </div>
-                        <div class="mt-4 text-[10px] bg-white/60 p-2 rounded-xl text-gray-500 font-medium"><i class="fa-solid fa-suitcase mr-2"></i>{{ item.note }}</div>
+                        <div class="mt-4 text-[11px] bg-white/60 p-2 rounded-xl text-gray-600 font-medium whitespace-pre-wrap leading-relaxed"><i class="fa-solid fa-suitcase mr-2"></i>{{ item.note }}</div>
                     </div>
 
-                    <div v-else class="bg-white rounded-[30px] p-5 card-shadow relative flex items-start border border-sakura-pink/10 cursor-pointer overflow-hidden" @click="openMap(item.address || item.name)">
+                    <div v-else class="bg-white rounded-[30px] p-5 card-shadow relative flex items-start border border-sakura-pink/10 cursor-pointer overflow-hidden" @click="openGuide(item, idx)">
                         <div class="mr-4 flex flex-col items-center min-w-[45px] relative z-10">
                             <div class="w-11 h-11 rounded-full text-white shadow-md flex items-center justify-center text-lg mb-1" :class="getCatColor(item.category)"><i :class="getCatIcon(item.category)"></i></div>
-                            <span class="text-[10px] font-bold text-gray-400">{{ item.startTime }}</span>
+                            <span class="text-[10px] font-bold text-gray-400">{{ formatTime(item.startTime) }}</span>
                         </div>
                         <div class="flex-1 pr-6 relative z-10">
                             <h3 class="text-lg font-bold text-gray-800 leading-tight">{{ item.name }}</h3>
@@ -185,21 +187,22 @@
                                 </button>
                             </div>
 
-                            <div v-if="item.note" class="mt-3 text-[11px] bg-sakura-bg/50 p-2.5 rounded-2xl border-l-4 border-sakura-pink text-gray-600">{{ item.note }}</div>
+                            <div v-if="item.note" class="mt-3 text-[11px] bg-sakura-bg/50 p-3 rounded-2xl border-l-4 border-sakura-pink text-gray-600 leading-relaxed whitespace-pre-wrap">{{ item.note }}</div>
                             
                             <div v-if="item.image" class="mt-3 rounded-[20px] overflow-hidden h-28 border border-gray-100 shadow-sm relative">
                                 <img :src="item.image" class="w-full h-full object-cover">
                             </div>
 
-                            <div v-if="item.link" class="mt-3">
-                                <a :href="item.link" target="_blank" @click.stop class="text-[10px] bg-blue-50 text-blue-500 border border-blue-100 px-4 py-2 rounded-full font-bold inline-flex items-center hover:bg-blue-500 hover:text-white transition-colors shadow-sm">
-                                    <i class="fa-solid fa-link mr-1.5"></i> 點我查看參考連結
-                                </a>
+                            <div class="mt-3 inline-block">
+                                <span class="text-[10px] text-sakura-dark bg-sakura-pink/10 px-3 py-1.5 rounded-full font-bold flex items-center shadow-sm">
+                                    <i class="fa-solid fa-book-open-reader mr-1.5"></i> 點我查看導遊攻略
+                                </span>
                             </div>
                         </div>
 
                         <div class="absolute top-4 right-4 flex flex-col gap-3 z-20">
                             <button @click.stop="moveItem(idx, -1)" class="text-gray-200 hover:text-gray-400"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                            <button @click.stop="openMap(item.address || item.name)" class="text-indigo-400 hover:text-indigo-600"><i class="fa-solid fa-location-arrow text-xs"></i></button>
                             <button @click.stop="editItem(item, idx)" class="text-sakura-pink/50 hover:text-sakura-dark"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
                             <button @click.stop="moveItem(idx, 1)" class="text-gray-200 hover:text-gray-400"><i class="fa-solid fa-chevron-down text-xs"></i></button>
                         </div>
@@ -340,6 +343,80 @@
 
     <button v-if="currentTab !== 'info'" @click="openModal" class="fixed bottom-8 right-8 w-15 h-15 bg-sakura-dark text-white rounded-full flex items-center justify-center text-2xl shadow-xl z-50 transition-transform active:scale-90" style="width:60px; height:60px;"><i class="fa-solid fa-plus"></i></button>
 
+    <div v-if="guideModal" class="fixed inset-0 bg-[#FFF5F7] z-[200] overflow-y-auto animate-slide-up flex flex-col">
+        <div class="relative h-64 bg-sakura-pink flex-shrink-0">
+            <img v-if="selectedGuideItem.image" :src="selectedGuideItem.image" class="w-full h-full object-cover">
+            <div v-else class="w-full h-full flex items-center justify-center bg-sakura-pink/50">
+                <i class="fa-solid fa-mountain-sun text-6xl text-white opacity-80"></i>
+            </div>
+            
+            <button @click="guideModal=false" class="absolute top-6 left-4 w-10 h-10 bg-black/30 text-white rounded-full flex items-center justify-center backdrop-blur-sm shadow-md"><i class="fa-solid fa-chevron-left text-lg"></i></button>
+            <div class="absolute top-6 right-4 flex gap-2">
+                <button @click="openMap(selectedGuideItem.address || selectedGuideItem.name)" class="w-10 h-10 bg-white/90 text-indigo-500 rounded-full flex items-center justify-center shadow-md backdrop-blur-sm">
+                    <i class="fa-solid fa-location-arrow"></i>
+                </button>
+                <button @click="toggleGuideEdit" class="px-4 py-2 bg-white/90 text-sakura-dark rounded-full font-bold text-xs shadow-md backdrop-blur-sm flex items-center">
+                    <i :class="isGuideEdit ? 'fa-solid fa-xmark mr-1' : 'fa-solid fa-pen-to-square mr-1'"></i> {{ isGuideEdit ? '取消編輯' : '編輯攻略' }}
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 px-6 pt-8 pb-12 -mt-8 bg-[#FFF5F7] rounded-t-[40px] relative z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+            <div class="mb-8 border-b-2 border-sakura-pink/20 pb-6">
+                <span class="text-[10px] font-bold text-white bg-sakura-dark px-3 py-1.5 rounded-full mb-3 inline-block shadow-sm"><i class="fa-solid fa-flag mr-1"></i>數位導遊為您介紹</span>
+                <h2 class="text-3xl font-black text-gray-800 leading-tight mb-2">{{ selectedGuideItem.name }}</h2>
+                <div class="text-xs text-gray-400 font-bold flex gap-3">
+                    <span><i class="fa-regular fa-clock mr-1 text-sakura-pink"></i> {{ formatTime(selectedGuideItem.startTime) }}</span>
+                    <span v-if="selectedGuideItem.category"><i class="fa-solid fa-tag mr-1 text-sakura-pink"></i> {{ selectedGuideItem.category }}</span>
+                </div>
+            </div>
+
+            <div v-if="!isGuideEdit" class="space-y-8">
+                <div class="bg-white rounded-[30px] p-6 shadow-sm border border-gray-50 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-sakura-pink/5 rounded-bl-full z-0"></div>
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center mb-3 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-sakura-pink/20 text-sakura-dark flex items-center justify-center mr-3"><i class="fa-solid fa-book-open"></i></div> 景點故事與攻略
+                    </h3>
+                    <p class="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap relative z-10">{{ selectedGuideItem.guideStory || '目前沒有故事，點擊右上角編輯添加吧！' }}</p>
+                </div>
+
+                <div class="bg-white rounded-[30px] p-6 shadow-sm border border-gray-50 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-orange-400/5 rounded-bl-full z-0"></div>
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center mb-3 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mr-3"><i class="fa-solid fa-utensils"></i></div> 必吃美食推薦
+                    </h3>
+                    <p class="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap relative z-10">{{ selectedGuideItem.guideFood || '尚無美食資訊' }}</p>
+                </div>
+
+                <div class="bg-white rounded-[30px] p-6 shadow-sm border border-gray-50 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-green-400/5 rounded-bl-full z-0"></div>
+                    <h3 class="font-bold text-lg text-gray-800 flex items-center mb-3 relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-3"><i class="fa-solid fa-gift"></i></div> 必買伴手禮
+                    </h3>
+                    <p class="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap relative z-10">{{ selectedGuideItem.guideBuy || '尚無伴手禮資訊' }}</p>
+                </div>
+            </div>
+
+            <div v-else class="space-y-5 animate-fade-in">
+                <div class="bg-white rounded-[30px] p-5 shadow-sm border border-gray-50">
+                    <label class="font-bold text-sm text-gray-700 flex items-center mb-3"><div class="w-6 h-6 rounded-full bg-sakura-pink/20 text-sakura-dark flex items-center justify-center mr-2"><i class="fa-solid fa-book-open text-[10px]"></i></div> 景點故事與攻略</label>
+                    <textarea v-model="editGuideData.guideStory" rows="4" placeholder="在這裡寫下景點的故事或交通攻略..." class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-sm text-gray-700 border border-transparent focus:border-sakura-pink transition-colors"></textarea>
+                </div>
+                <div class="bg-white rounded-[30px] p-5 shadow-sm border border-gray-50">
+                    <label class="font-bold text-sm text-gray-700 flex items-center mb-3"><div class="w-6 h-6 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mr-2"><i class="fa-solid fa-utensils text-[10px]"></i></div> 必吃美食推薦</label>
+                    <textarea v-model="editGuideData.guideFood" rows="3" placeholder="有什麼必吃的餐廳或小吃？" class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-sm text-gray-700 border border-transparent focus:border-orange-300 transition-colors"></textarea>
+                </div>
+                <div class="bg-white rounded-[30px] p-5 shadow-sm border border-gray-50">
+                    <label class="font-bold text-sm text-gray-700 flex items-center mb-3"><div class="w-6 h-6 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-2"><i class="fa-solid fa-gift text-[10px]"></i></div> 必買伴手禮</label>
+                    <textarea v-model="editGuideData.guideBuy" rows="3" placeholder="該買什麼紀念品回去？" class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-sm text-gray-700 border border-transparent focus:border-green-400 transition-colors"></textarea>
+                </div>
+                <button @click="saveGuide" class="w-full py-4 bg-gradient-to-r from-sakura-pink to-sakura-dark text-white rounded-[20px] font-bold shadow-lg mt-4 flex justify-center items-center">
+                    <i class="fa-solid fa-check-circle mr-2"></i>儲存攻略資訊
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div v-if="modal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-[100] backdrop-blur-sm">
         <div class="bg-white rounded-[40px] w-full max-w-sm p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <h3 class="font-black text-center mb-6 text-xl text-gray-800">{{ isEdit ? '編輯項目' : '新增項目' }}</h3>
@@ -348,20 +425,16 @@
                 <div class="flex gap-2 mb-4 overflow-x-auto hide-scrollbar pb-1">
                     <button v-for="cat in ['交通','飲食','住宿','門票','購物','其他']" @click="newExp.category=cat" :class="newExp.category===cat?'bg-sakura-dark text-white shadow-md':'bg-gray-50 text-gray-400'" class="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all">{{cat}}</button>
                 </div>
-                
                 <div class="flex gap-3">
                     <input v-model="newExp.date" type="date" class="w-1/3 bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-500 text-xs text-center">
                     <input v-model="newExp.name" placeholder="花費名稱" class="w-2/3 bg-gray-50 p-4 rounded-2xl outline-none font-bold">
                 </div>
-
                 <div class="flex gap-3">
                     <select v-model="newExp.currency" class="w-1/4 bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-500 text-xs appearance-none text-center"><option value="JPY">日幣¥</option><option value="TWD">台幣$</option></select>
                     <input v-model.number="newExp.amount" type="number" placeholder="金額" class="w-1/2 bg-gray-50 p-4 rounded-2xl outline-none font-black text-sakura-dark text-lg">
                     <select v-model="newExp.payment" class="w-1/4 bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-500 text-xs appearance-none text-center"><option value="現金">現金</option><option value="信用卡">刷卡</option></select>
                 </div>
-                
                 <input v-model="newExp.note" placeholder="備註 (選填)" class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-medium text-sm text-gray-600">
-
                 <div class="pt-2 border-t border-gray-100">
                     <p class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest">誰先代墊付款？</p>
                     <div class="flex gap-2">
@@ -444,14 +517,11 @@
     <div v-if="actionModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[150]" @click="actionModal=false">
         <div class="bg-white rounded-[40px] p-8 w-full max-w-xs text-center relative" @click.stop>
             <button @click="actionModal=false" class="absolute top-4 right-5 text-gray-300 hover:text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-            
             <h3 class="font-black text-gray-800 text-lg mb-4">{{ actionData.title || '附件查看' }}</h3>
-            
             <div class="bg-gray-50 rounded-[20px] flex items-center justify-center mb-6 overflow-hidden border border-gray-100 min-h-[200px] p-2">
                 <img v-if="actionData.image" :src="actionData.image" class="w-full object-contain max-h-[60vh] rounded-[15px]">
                 <div v-else class="text-gray-300 text-xs flex flex-col items-center"><i class="fa-solid fa-image-slash text-4xl mb-2"></i>尚未上傳檔案</div>
             </div>
-            
             <p class="text-xs text-gray-500 leading-relaxed font-medium">{{ actionData.desc }}</p>
         </div>
     </div>
@@ -459,6 +529,9 @@
 
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbxrBVZlQCo_WKcOXnGYJoe368EBoCpqIyMhu2r0VZZZtOmYGYEyqdm2xzQMSNNsEZZm/exec';
+const ITIN_KEY = 'kyoto_itinerary_v3'; // 強制更新記憶鑰匙 V3
+const HOTEL_KEY = 'kyoto_hotel_data_v2';
+
 const { createApp, ref, computed, onMounted } = Vue;
 
 createApp({
@@ -474,18 +547,124 @@ createApp({
         const actionData = ref({});
         const weatherData = ref({ icon: 'fa-solid fa-spinner fa-spin', temp: '--', feel: '--', desc: '載入中' });
         
-        const hotelData = ref({ name: '京都府京都市 (暫定)', link: '' });
+        // 導遊功能相關 State
+        const guideModal = ref(false);
+        const isGuideEdit = ref(false);
+        const selectedGuideItem = ref({});
+        const editGuideData = ref({ guideStory: '', guideFood: '', guideBuy: '' });
+        const guideDayIndex = ref(0);
+        const guideItemIndex = ref(0);
+        
+        const hotelData = ref({ name: '桂川ハウス希 House Nozomi', link: '' });
         const dates = ref([{dateStr:'04/09',weekday:'Thu'},{dateStr:'04/10',weekday:'Fri'},{dateStr:'04/11',weekday:'Sat'},{dateStr:'04/12',weekday:'Sun'},{dateStr:'04/13',weekday:'Mon'}]);
         
+        // --- 根據文檔客製化導遊行程與攻略 ---
         const itineraryData = ref([
+            // DAY 1
             [
-                { id:101, name:'星宇航空 JX822', category:'flight', startTime:'08:30', note:'手提7KG *1 / 託運23KG *1' },
-                { id:102, name:'抵達關西機場 KIX', category:'transport', startTime:'12:15', transportType:'public', note:'準備搭乘 Haruka (請自行新增車票附件)' },
-                { id:103, name:'京都車站', category:'transport', startTime:'13:30', transportType:'public' },
-                { id:104, name:'鴨川賞櫻', category:'sightseeing', startTime:'15:30', transportType:'walk' },
-                { id:105, name:'柚子元 (晚餐)', category:'food', startTime:'18:00', transportType:'walk', note:'推薦柚子鍋，先斗町附近', hours:'17:00-23:00' }
+                { 
+                    id:101, name:'臺北 TPE (T1) 搭飛機', category:'flight', startTime:'08:30', note:'出發囉！帶著愉快的心情前往京都賞櫻。',
+                    guideStory: '旅途的起點，記得確認護照、行李與愉快的心情！', guideFood: '機場免稅店的簡單輕食', guideBuy: '不用急著買，保留戰力給京都！'
+                },
+                { 
+                    id:102, name:'關西機場 Kansai Airport (KIX)', category:'transport', startTime:'12:15', transportType:'public', note:'抵達第一航廈！',
+                    guideStory: '位於大阪灣人工島上的日本重要國際機場。', guideFood: '如果肚子餓可以先在機場買個御飯糰。', guideBuy: '可先拿些旅遊簡章。'
+                },
+                { 
+                    id:103, name:'搭乘 Haruka 至 JR京都站 JR Kyoto Station', category:'transport', startTime:'13:30', transportType:'public', attachmentType: 'ticket', attachmentTitle: 'Haruka車票', note:'搭乘時間約80分鐘。\n🚄 導遊Tips：Haruka是直達京都最快的方式。',
+                    guideStory: '「Haruka (遙號)」是連結關西機場與京都的特急列車，純白的車身與專屬的標誌非常醒目。', guideFood: '可以在車站買個火車便當或三明治在車上享用。', guideBuy: '無'
+                },
+                { 
+                    id:104, name:'桂川ハウス希 House Nozomi', category:'accommodation', startTime:'15:00', transportType:'walk', note:'先放行李，準備輕裝漫步京都！',
+                    guideStory: '這次京都賞櫻之旅的溫馨落腳處，周邊交通便利，能體驗在地人生活。', guideFood: '附近超市的當季水果', guideBuy: '無'
+                },
+                { 
+                    id:105, name:'鴨川 Kamogawa 賞櫻', category:'sightseeing', startTime:'15:30', transportType:'walk', attachmentType: 'photo', attachmentTitle: '鴨川地圖', note:'🌸 導遊Tips：鴨川是京都人的靈魂之河，櫻花季時兩岸粉櫻花海極美。',
+                    guideStory: '鴨川貫穿京都中央，自平安時代起便是繁華之地。水質清澈，春天兩岸櫻花盛開，是京都人最愛散步的地方。', guideFood: '河畔旁的「川床料理」，或是買串「三色糰子」坐在草地上吃。', guideBuy: '周邊傳統店鋪的和風小物。'
+                },
+                { 
+                    id:106, name:'先斗町公園 Pontocho Park', category:'sightseeing', startTime:'17:00', transportType:'walk', note:'🏮 導遊Tips：先斗町是京都五花街之一。',
+                    guideStory: '先斗町是京都的傳統花街，狹窄的石板小巷兩旁充滿了町家建築，傍晚燈籠亮起時極具傳統風情。', guideFood: '附近巷弄內的居酒屋小菜。', guideBuy: '藝伎風格的小手帕或吸油面紙。'
+                },
+                { 
+                    id:107, name:'柚子元 Yuzumoto (晚餐)', category:'food', startTime:'17:30', transportType:'walk', note:'🍲 導遊必吃：柚子元的柚子鍋非常有名！',
+                    guideStory: '隱身在先斗町的超人氣名店，主打清新酸甜的柚子風味，深受在地人與遊客喜愛。', guideFood: '必點招牌「柚子鍋」，滿滿的蔥花與柚子片，搭配豬肉極度美味解膩！', guideBuy: '無'
+                },
+                { 
+                    id:108, name:'二条城 Nijo Castle 夜櫻', category:'sightseeing', startTime:'18:30', transportType:'walk', hours:'18:00–22:00', attachmentType: 'ticket', attachmentTitle: '二条城門票', note:'🌸 導遊Tips：德川家康在京都的居所，也是大政奉還的舞台。',
+                    guideStory: '由德川家康於1603年建立，是江戶幕府的權力象徵。殿內的「鸝鳴地板」為了防刺客而設計。櫻花季特有的夜櫻點燈與光雕投影是春季絕美的視覺饗宴！', guideFood: '城外茶屋的抹茶甜點。', guideBuy: '二条城櫻花限定御守、特色明信片。'
+                }
             ],
-            [], [], [], []
+            // DAY 2
+            [
+                { 
+                    id:201, name:'JR京都站 JR Kyoto Station → JR嵯峨嵐山站 JR Saga-Arashiyama Station', category:'transport', startTime:'09:00', transportType:'public', note:'準備前往充滿自然風情的嵐山！',
+                    guideStory: '從現代化的京都車站出發，只需短暫車程就能抵達風光明媚的嵐山。', guideFood: '車站內的美味麵包。', guideBuy: '無'
+                },
+                { 
+                    id:202, name:'嵐山小火車 (嵯峨→龜岡)', category:'transport', startTime:'10:02', travelTime:'25', transportType:'public', note:'🛤️ 導遊Tips：沿保津川溪谷行駛，風景極度壯闊。',
+                    guideStory: '這是一輛將原本廢線的舊山陰本線恢復行駛的觀光小火車。復古的柴油火車沿著保津川溪谷行駛，從車窗可飽覽絕美的自然溪谷風光。', guideFood: '沿途車站販售的熱飲或小零食。', guideBuy: '小火車限定周邊商品（如紀念車票、模型）。'
+                },
+                { 
+                    id:203, name:'嵐山小火車 (龜岡→嵐山)', category:'transport', startTime:'11:30', travelTime:'20', transportType:'public', note:'搭乘小火車返回嵐山站。',
+                    guideStory: '回程可以從不同角度再次欣賞保津川的美景。', guideFood: '無', guideBuy: '無'
+                },
+                { 
+                    id:204, name:'嵐山竹林 Arashiyama Bamboo Grove', category:'sightseeing', startTime:'12:00', transportType:'walk', note:'🎋 導遊Tips：長約400公尺，筆直伸向天空的綠色竹林。',
+                    guideStory: '嵯峨野自平安時代便是貴族的避暑勝地。這條長約400公尺的竹林小徑，陽光穿透高聳竹林的景致，是京都最具代表性的明信片畫面。', guideFood: '野宮神社附近的「古都芋本舖」冰淇淋。', guideBuy: '竹製精緻工藝品、野宮神社的戀愛御守。'
+                },
+                { 
+                    id:205, name:'天龍寺 Tenryu-ji (保留景點)', category:'sightseeing', startTime:'13:00', transportType:'walk', price:'門票300日圓', note:'⛩️ 導遊Tips：世界文化遺產，京都五山之首。',
+                    guideStory: '由夢窗國師於1339年開山創建，佔地延伸到龜山離宮遺跡。境內的「曹源池庭園」保留了創建當時的樣貌，枝垂櫻盛開時極美。', guideFood: '寺內有名的精進料理（素齋）「篩月」。', guideBuy: '天龍寺的祈福線香。'
+                },
+                { 
+                    id:206, name:'渡月橋 Togetsukyo Bridge', category:'sightseeing', startTime:'14:30', transportType:'walk', note:'🌉 導遊Tips：嵐山最具代表性的地標。',
+                    guideStory: '建於9世紀前葉。因鎌倉時代龜山天皇詠歎「宛如月亮正在過橋般」而得名，橫跨桂川，常出現在各種浮世繪作品中。', guideFood: '橋畔超人氣的「% ARABICA」咖啡、「新八茶屋」抹茶冰淇淋、「中村屋」可樂餅。', guideBuy: '「琴きき茶屋」的櫻餅。'
+                },
+                { 
+                    id:207, name:'嵐山公園 Arashiyama Park (保留景點)', category:'sightseeing', startTime:'15:30', transportType:'walk', note:'🐒 導遊Tips：有機會看到野生獼猴。',
+                    guideStory: '優美的自然公園，是春季賞櫻、秋季賞楓的絕佳去處。', guideFood: '帶個櫻花便當在公園野餐。', guideBuy: '無'
+                },
+                { 
+                    id:208, name:'SNOW PEAK CAFE', category:'shopping', startTime:'16:30', transportType:'walk', link: 'https://gogojp.tw/snow-peak-coupon/', note:'🛍️ 導遊必買：限定鈦金屬馬克杯！',
+                    guideStory: '日本頂級戶外品牌 Snow Peak 與傳統町屋結合的特色店鋪，完美融合了現代露營風與京都古意。', guideFood: '店內特製的手沖咖啡。', guideBuy: '絕對必買！「嵐山限定」的雪峰鈦金屬馬克杯與環保叉匙。'
+                }
+            ],
+            // DAY 3
+            [
+                { 
+                    id:301, name:'JR京都站 JR Kyoto Station (近鐵特急)', category:'transport', startTime:'08:00', transportType:'public', attachmentType: 'photo', attachmentTitle: '近鐵特急 時刻表', note:'搭乘近鐵特急前往橿原神宮前站 Kashiharajingu-mae Station。',
+                    guideStory: '搭乘舒適的近鐵特急列車，一路向南前往奈良深處。', guideFood: '在京都車站買個車站便當 (駅弁)。', guideBuy: '無'
+                },
+                { 
+                    id:302, name:'橿原神宮前站 Kashiharajingu-mae Station', category:'transport', startTime:'09:00', transportType:'public', note:'轉乘「近鐵特急南大阪線.吉野線」。',
+                    guideStory: '這裡是重要的轉乘樞紐，即將進入吉野山的範圍。', guideFood: '無', guideBuy: '無'
+                },
+                { 
+                    id:303, name:'吉野站 Yoshino Station 抵達', category:'transport', startTime:'09:40', transportType:'public', note:'準備上山賞櫻！',
+                    guideStory: '抵達吉野山腳下，空氣中開始瀰漫著春天的氣息。', guideFood: '無', guideBuy: '無'
+                },
+                { 
+                    id:304, name:'奈良吉野山 Mt. Yoshino', category:'sightseeing', startTime:'10:00', transportType:'walk', attachmentType: 'photo', attachmentTitle: '吉野山地圖', note:'🌸 導遊Tips：日本第一賞櫻勝地！「一目千本」。',
+                    guideStory: '日本最著名的賞櫻聖地！全山有約三萬株櫻花樹，依海拔分為下千本、中千本、上千本、奧千本，花期交錯，盛開時被稱為「一目千本」，如粉色雲海般極其壯觀。', guideFood: '百年老店「平宗」的鯖魚/鮭魚柿葉壽司；飄散黃豆香的吉野葛餅。', guideBuy: '純正的「吉野本葛粉」、櫻花限定和菓子。'
+                },
+                { 
+                    id:305, name:'吉野山觀光巴士', category:'transport', startTime:'10:30', transportType:'public', attachmentType: 'photo', attachmentTitle: '觀光巴士時刻表與費用', note:'搭乘接駁巴士遊覽各景點。',
+                    guideStory: '穿梭在櫻花林間的觀光巴士，能節省不少體力。', guideFood: '無', guideBuy: '無'
+                },
+                { 
+                    id:306, name:'回住宿 桂川ハウス希 House Nozomi', category:'accommodation', startTime:'18:00', transportType:'public', note:'結束吉野山之旅，回程休息。',
+                    guideStory: '收穫了滿滿的櫻花美景，回京都好好休息。', guideFood: '回程路上買些宵夜啤酒。', guideBuy: '無'
+                }
+            ],
+            // DAY 4
+            [
+                { 
+                    id:401, name:'伏見十石舟 Fushimi Jikkokubune', category:'sightseeing', startTime:'10:20', transportType:'walk', hours:'10:20 - 11:10', note:'⛵ 導遊Tips：搭乘傳統木造小船，穿梭在櫻花之間。',
+                    guideStory: '江戶時代為了運送米、酒與旅客而在宇治川上航行的傳統木造船。現今乘船穿梭於兩岸垂柳與櫻花交織的浪漫水岸，風景如江戶時代畫作般優美。', guideFood: '伏見名物「酒粕拉麵」(如玄屋拉麵)，以及酒粕冰淇淋。', guideBuy: '伏見是著名酒鄉，必買「月桂冠」或「黃櫻」的清酒，還有伏見限定的小酒杯！'
+                }
+            ], 
+            []
         ]);
 
         const shoppingList = ref([]);
@@ -501,7 +680,6 @@ createApp({
         const newItem = ref({ name:'', startTime:'', category:'sightseeing', transportType:'walk', note:'', travelTime:'', image:null, link:'', attachmentType:'', attachmentTitle:'', attachmentImage:null, attachmentDesc:'' });
         const newShop = ref({ name:'', image:null });
 
-        // 修復時間亂碼的過濾器
         const formatTime = (t) => {
             if (!t) return '';
             if (typeof t === 'string' && t.includes('T')) {
@@ -513,7 +691,6 @@ createApp({
             return String(t);
         };
 
-        // 修復日期亂碼的過濾器
         const formatDate = (dStr) => {
             if (!dStr) return '';
             if (typeof dStr === 'string' && dStr.includes('T')) {
@@ -582,7 +759,7 @@ createApp({
         const formatNumber = (n) => n ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : '0';
         
         const openMap = (query) => { 
-            if(query) window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query), '_blank'); 
+            if(query) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank'); 
         };
         
         const triggerAttachment = (item) => { 
@@ -593,6 +770,60 @@ createApp({
                 type: item.attachmentType
             };
             actionModal.value = true; 
+        };
+
+        // --- 新增：導遊攻略相關方法 ---
+        const openGuide = (item, idx) => {
+            selectedGuideItem.value = { ...item };
+            guideDayIndex.value = selectedDateIndex.value;
+            guideItemIndex.value = idx;
+            editGuideData.value = {
+                guideStory: item.guideStory || '',
+                guideFood: item.guideFood || '',
+                guideBuy: item.guideBuy || ''
+            };
+            isGuideEdit.value = false;
+            guideModal.value = true;
+        };
+
+        const toggleGuideEdit = () => {
+            isGuideEdit.value = !isGuideEdit.value;
+            if (!isGuideEdit.value) {
+                // 如果取消編輯，把資料重置回原本的
+                editGuideData.value = {
+                    guideStory: selectedGuideItem.value.guideStory || '',
+                    guideFood: selectedGuideItem.value.guideFood || '',
+                    guideBuy: selectedGuideItem.value.guideBuy || ''
+                };
+            }
+        };
+
+        const saveGuide = () => {
+            const dIdx = guideDayIndex.value;
+            const iIdx = guideItemIndex.value;
+            
+            // 更新畫面上顯示的資料
+            selectedGuideItem.value.guideStory = editGuideData.value.guideStory;
+            selectedGuideItem.value.guideFood = editGuideData.value.guideFood;
+            selectedGuideItem.value.guideBuy = editGuideData.value.guideBuy;
+
+            // 更新到核心陣列中
+            itineraryData.value[dIdx][iIdx].guideStory = editGuideData.value.guideStory;
+            itineraryData.value[dIdx][iIdx].guideFood = editGuideData.value.guideFood;
+            itineraryData.value[dIdx][iIdx].guideBuy = editGuideData.value.guideBuy;
+
+            // 儲存到本地
+            saveToLocal(ITIN_KEY, itineraryData.value);
+            
+            // 背景同步到 Google 試算表 (使用修改行程相同的邏輯)
+            const payload = { 
+                ...itineraryData.value[dIdx][iIdx], 
+                dayIndex: dIdx, 
+                sheetType: 'itinerary' 
+            };
+            try { fetch(API, { method: 'POST', body: JSON.stringify(payload) }); } catch (e) {}
+
+            isGuideEdit.value = false;
         };
         
         const openModal = () => { 
@@ -611,12 +842,12 @@ createApp({
         };
 
         const editHotel = () => {
-            const nameInput = prompt('請輸入你們的住宿飯店名稱或地址\n(例如：京都十字飯店)：', hotelData.value.name);
+            const nameInput = prompt('請輸入你們的住宿飯店名稱或地址\n(例如：桂川ハウス希 House Nozomi)：', hotelData.value.name);
             if (nameInput !== null && nameInput.trim() !== '') {
                 const linkInput = prompt('請貼上飯店網頁的完整連結 (選填)：\n(如果沒有網頁，可以直接按確定跳過)', hotelData.value.link);
                 hotelData.value.name = nameInput.trim();
                 hotelData.value.link = linkInput ? linkInput.trim() : '';
-                saveToLocal('kyoto_hotel_data', hotelData.value);
+                saveToLocal(HOTEL_KEY, hotelData.value);
             }
         };
 
@@ -656,7 +887,7 @@ createApp({
                     itineraryData.value[selectedDateIndex.value].push({...payload});
                 }
                 
-                saveToLocal('kyoto_itinerary', itineraryData.value);
+                saveToLocal(ITIN_KEY, itineraryData.value);
 
                 try { fetch(API, { method: 'POST', body: JSON.stringify(payload) }); } 
                 catch (e) { console.log('離線儲存成功'); }
@@ -678,7 +909,7 @@ createApp({
         const handleDelete = () => {
             if(confirm('確定要刪除這個項目嗎？')) {
                 itineraryData.value[selectedDateIndex.value].splice(editIdx.value, 1);
-                saveToLocal('kyoto_itinerary', itineraryData.value);
+                saveToLocal(ITIN_KEY, itineraryData.value);
                 modal.value = false;
             }
         };
@@ -689,7 +920,7 @@ createApp({
             const temp = list[idx];
             list[idx] = list[idx+dir];
             list[idx+dir] = temp;
-            saveToLocal('kyoto_itinerary', itineraryData.value);
+            saveToLocal(ITIN_KEY, itineraryData.value);
         };
 
         const handleImg = (e) => {
@@ -740,9 +971,8 @@ createApp({
         };
 
         const fetchItinerary = async () => {
-            const localItinerary = loadFromLocal('kyoto_itinerary');
+            const localItinerary = loadFromLocal(ITIN_KEY);
             if (Array.isArray(localItinerary) && localItinerary.length === 5) {
-                // 清理本地暫存內的亂碼
                 localItinerary.forEach(day => day.forEach(i => i.startTime = formatTime(i.startTime)));
                 itineraryData.value = localItinerary;
             }
@@ -753,7 +983,6 @@ createApp({
                 if(Array.isArray(data) && data.length > 0) {
                     const newItinerary = [[], [], [], [], []];
                     data.forEach(item => {
-                        // 雲端資料時間過濾還原
                         item.startTime = formatTime(item.startTime);
                         const day = Number(item.dayIndex);
                         if(!isNaN(day) && day >= 0 && day <= 4) {
@@ -764,7 +993,7 @@ createApp({
                         dayList.sort((a,b) => (a.startTime||'24:00').localeCompare(b.startTime||'24:00'));
                     });
                     itineraryData.value = newItinerary;
-                    saveToLocal('kyoto_itinerary', newItinerary);
+                    saveToLocal(ITIN_KEY, newItinerary);
                 }
             } catch (e) { console.log('使用本地暫存行程'); }
         };
@@ -797,12 +1026,9 @@ createApp({
             const localShop = loadFromLocal('kyoto_shopping');
             if (Array.isArray(localShop)) shoppingList.value = localShop;
 
-            const localHotelObj = loadFromLocal('kyoto_hotel_data');
+            const localHotelObj = loadFromLocal(HOTEL_KEY);
             if (localHotelObj && typeof localHotelObj === 'object') {
                 hotelData.value = localHotelObj;
-            } else {
-                const oldHotel = loadFromLocal('kyoto_hotel');
-                if (oldHotel) hotelData.value.name = oldHotel;
             }
         });
 
@@ -811,8 +1037,10 @@ createApp({
             currentItinerary, totalJPY, currencyInput, loadingExp, modal, isEdit,
             newExp, newItem, newShop, actionModal, actionData, weatherData, settlement,
             hotelData, 
+            guideModal, isGuideEdit, selectedGuideItem, editGuideData, // 導遊系統相關 State
             getTabIcon, getCatIcon, getCatColor, getTransportIcon, getAttachmentIcon, formatNumber, formatTime, formatDate,
-            openMap, triggerAttachment, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, handleItineraryImg, handleAttachmentImg, fetchExpenses, fetchItinerary, removeExpense, editHotel 
+            openMap, triggerAttachment, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, handleItineraryImg, handleAttachmentImg, fetchExpenses, fetchItinerary, removeExpense, editHotel, 
+            openGuide, toggleGuideEdit, saveGuide // 導遊系統相關 Method
         };
     }
 }).mount('#app');
