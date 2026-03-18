@@ -164,6 +164,9 @@
                             <i class="fa-solid fa-plane text-deep-ice-blue text-2xl"></i>
                             <span>KIX <small class="text-xs block font-normal text-blue-400">抵達</small></span>
                         </div>
+                        <div v-if="item.image" class="mt-3 rounded-[20px] overflow-hidden h-28 border border-white/50 shadow-sm relative">
+                            <img :src="item.image" class="w-full h-full object-cover">
+                        </div>
                         <div class="mt-4 text-[11px] bg-white/60 p-2 rounded-xl text-gray-600 font-medium whitespace-pre-wrap leading-relaxed"><i class="fa-solid fa-suitcase mr-2"></i>{{ item.note }}</div>
                     </div>
 
@@ -195,8 +198,14 @@
 
                             <div class="mt-3 inline-block">
                                 <span class="text-[10px] text-sakura-dark bg-sakura-pink/10 px-3 py-1.5 rounded-full font-bold flex items-center shadow-sm">
-                                    <i class="fa-solid fa-book-open-reader mr-1.5"></i> 點我查看導遊攻略
+                                    <i class="fa-solid fa-book-open-reader mr-1.5"></i> 點我看圖文攻略
                                 </span>
+                            </div>
+
+                            <div v-if="item.link" class="mt-3">
+                                <a :href="item.link" target="_blank" @click.stop class="text-[10px] bg-blue-50 text-blue-500 border border-blue-100 px-4 py-2 rounded-full font-bold inline-flex items-center hover:bg-blue-500 hover:text-white transition-colors shadow-sm">
+                                    <i class="fa-solid fa-link mr-1.5"></i> 點我查看參考連結
+                                </a>
                             </div>
                         </div>
 
@@ -344,24 +353,24 @@
     <button v-if="currentTab !== 'info'" @click="openModal" class="fixed bottom-8 right-8 w-15 h-15 bg-sakura-dark text-white rounded-full flex items-center justify-center text-2xl shadow-xl z-50 transition-transform active:scale-90" style="width:60px; height:60px;"><i class="fa-solid fa-plus"></i></button>
 
     <div v-if="guideModal" class="fixed inset-0 bg-[#FFF5F7] z-[200] overflow-y-auto animate-slide-up flex flex-col">
-        <div class="relative h-64 bg-sakura-pink flex-shrink-0">
-            <img v-if="selectedGuideItem.image" :src="selectedGuideItem.image" class="w-full h-full object-cover">
-            <div v-else class="w-full h-full flex items-center justify-center bg-sakura-pink/50">
-                <i class="fa-solid fa-mountain-sun text-6xl text-white opacity-80"></i>
-            </div>
-            
-            <button @click="guideModal=false" class="absolute top-6 left-4 w-10 h-10 bg-black/30 text-white rounded-full flex items-center justify-center backdrop-blur-sm shadow-md"><i class="fa-solid fa-chevron-left text-lg"></i></button>
-            <div class="absolute top-6 right-4 flex gap-2">
-                <button @click="openMap(selectedGuideItem.address || selectedGuideItem.name)" class="w-10 h-10 bg-white/90 text-indigo-500 rounded-full flex items-center justify-center shadow-md backdrop-blur-sm">
+        <div class="sticky top-0 z-50 bg-[#FFF5F7]/95 backdrop-blur-sm px-4 py-4 flex justify-between items-center shadow-sm border-b border-sakura-pink/10">
+            <button @click="guideModal=false" class="w-10 h-10 bg-white text-gray-600 rounded-full flex items-center justify-center shadow-sm border border-gray-100"><i class="fa-solid fa-chevron-left text-lg"></i></button>
+            <div class="flex gap-2">
+                <button @click="openMap(selectedGuideItem.address || selectedGuideItem.name)" class="w-10 h-10 bg-white text-indigo-500 rounded-full flex items-center justify-center shadow-sm border border-gray-100">
                     <i class="fa-solid fa-location-arrow"></i>
                 </button>
-                <button @click="toggleGuideEdit" class="px-4 py-2 bg-white/90 text-sakura-dark rounded-full font-bold text-xs shadow-md backdrop-blur-sm flex items-center">
+                <button @click="toggleGuideEdit" class="px-4 py-2 bg-white text-sakura-dark rounded-full font-bold text-xs shadow-sm border border-gray-100 flex items-center">
                     <i :class="isGuideEdit ? 'fa-solid fa-xmark mr-1' : 'fa-solid fa-pen-to-square mr-1'"></i> {{ isGuideEdit ? '取消編輯' : '編輯攻略' }}
                 </button>
             </div>
         </div>
 
-        <div class="flex-1 px-6 pt-8 pb-12 -mt-8 bg-[#FFF5F7] rounded-t-[40px] relative z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+        <div class="flex-1 px-6 pt-6 pb-12 relative z-10">
+            
+            <div v-if="isGuideEdit ? editGuideData.image : selectedGuideItem.image" class="w-full h-56 mb-6 rounded-[30px] overflow-hidden shadow-md relative">
+                <img :src="isGuideEdit ? editGuideData.image : selectedGuideItem.image" class="w-full h-full object-cover">
+            </div>
+
             <div class="mb-8 border-b-2 border-sakura-pink/20 pb-6">
                 <span class="text-[10px] font-bold text-white bg-sakura-dark px-3 py-1.5 rounded-full mb-3 inline-block shadow-sm"><i class="fa-solid fa-flag mr-1"></i>數位導遊為您介紹</span>
                 <h2 class="text-3xl font-black text-gray-800 leading-tight mb-2">{{ selectedGuideItem.name }}</h2>
@@ -397,7 +406,7 @@
                 </div>
             </div>
 
-            <div v-else class="space-y-5 animate-fade-in">
+            <div v-else class="space-y-5 animate-fade-in pb-10">
                 <div class="bg-white rounded-[30px] p-5 shadow-sm border border-gray-50">
                     <label class="font-bold text-sm text-gray-700 flex items-center mb-3"><div class="w-6 h-6 rounded-full bg-sakura-pink/20 text-sakura-dark flex items-center justify-center mr-2"><i class="fa-solid fa-book-open text-[10px]"></i></div> 景點故事與攻略</label>
                     <textarea v-model="editGuideData.guideStory" rows="4" placeholder="在這裡寫下景點的故事或交通攻略..." class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-sm text-gray-700 border border-transparent focus:border-sakura-pink transition-colors"></textarea>
@@ -410,6 +419,14 @@
                     <label class="font-bold text-sm text-gray-700 flex items-center mb-3"><div class="w-6 h-6 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-2"><i class="fa-solid fa-gift text-[10px]"></i></div> 必買伴手禮</label>
                     <textarea v-model="editGuideData.guideBuy" rows="3" placeholder="該買什麼紀念品回去？" class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-sm text-gray-700 border border-transparent focus:border-green-400 transition-colors"></textarea>
                 </div>
+                
+                <div class="flex justify-end mt-2">
+                    <input type="file" @change="handleGuideImg" class="hidden" id="guideImgUpload" accept="image/*">
+                    <label for="guideImgUpload" class="cursor-pointer bg-white text-sakura-dark px-5 py-2.5 rounded-full border border-sakura-pink/30 hover:bg-sakura-pink hover:text-white transition-colors font-bold shadow-sm flex items-center text-xs">
+                        <i class="fa-solid fa-camera mr-2"></i> {{ editGuideData.image ? '更換相片' : '上傳景點相片' }}
+                    </label>
+                </div>
+
                 <button @click="saveGuide" class="w-full py-4 bg-gradient-to-r from-sakura-pink to-sakura-dark text-white rounded-[20px] font-bold shadow-lg mt-4 flex justify-center items-center">
                     <i class="fa-solid fa-check-circle mr-2"></i>儲存攻略資訊
                 </button>
@@ -465,7 +482,7 @@
                 </div>
                 
                 <input v-model="newItem.link" placeholder="貼上網頁/地圖參考連結 (選填)" class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-xs font-medium text-blue-500">
-                <textarea v-model="newItem.note" placeholder="特色與備註" rows="3" class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-xs font-medium"></textarea>
+                <textarea v-model="newItem.note" placeholder="小備註 (導遊攻略請從首頁進入編輯)" rows="3" class="w-full bg-gray-50 p-4 rounded-2xl outline-none text-xs font-medium"></textarea>
 
                 <div class="pt-2 border-t border-gray-100">
                     <p class="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">票券/附件設定</p>
@@ -529,7 +546,7 @@
 
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbxrBVZlQCo_WKcOXnGYJoe368EBoCpqIyMhu2r0VZZZtOmYGYEyqdm2xzQMSNNsEZZm/exec';
-const ITIN_KEY = 'kyoto_itinerary_v3'; // 強制更新記憶鑰匙 V3
+const ITIN_KEY = 'kyoto_itinerary_v6'; // 強制更新記憶鑰匙 (無預設大圖輕量版)
 const HOTEL_KEY = 'kyoto_hotel_data_v2';
 
 const { createApp, ref, computed, onMounted } = Vue;
@@ -547,18 +564,17 @@ createApp({
         const actionData = ref({});
         const weatherData = ref({ icon: 'fa-solid fa-spinner fa-spin', temp: '--', feel: '--', desc: '載入中' });
         
-        // 導遊功能相關 State
         const guideModal = ref(false);
         const isGuideEdit = ref(false);
         const selectedGuideItem = ref({});
-        const editGuideData = ref({ guideStory: '', guideFood: '', guideBuy: '' });
+        const editGuideData = ref({ guideStory: '', guideFood: '', guideBuy: '', image: '' });
         const guideDayIndex = ref(0);
         const guideItemIndex = ref(0);
         
         const hotelData = ref({ name: '桂川ハウス希 House Nozomi', link: '' });
         const dates = ref([{dateStr:'04/09',weekday:'Thu'},{dateStr:'04/10',weekday:'Fri'},{dateStr:'04/11',weekday:'Sat'},{dateStr:'04/12',weekday:'Sun'},{dateStr:'04/13',weekday:'Mon'}]);
         
-        // --- 根據文檔客製化導遊行程與攻略 ---
+        // --- 根據文檔客製化導遊行程與攻略 (已移除預設大圖) ---
         const itineraryData = ref([
             // DAY 1
             [
@@ -603,7 +619,7 @@ createApp({
                 },
                 { 
                     id:202, name:'嵐山小火車 (嵯峨→龜岡)', category:'transport', startTime:'10:02', travelTime:'25', transportType:'public', note:'🛤️ 導遊Tips：沿保津川溪谷行駛，風景極度壯闊。',
-                    guideStory: '這是一輛將原本廢線的舊山陰本線恢復行駛的觀光小火車。復古的柴油火車沿著保津川溪谷行駛，從車窗可飽覽絕美的自然溪谷風光。', guideFood: '沿途車站販售的熱飲或小零食。', guideBuy: '小火車限定周邊商品（如紀念車票、模型）。'
+                    guideStory: '這是一輛將原本廢線的舊山陰本線恢復行駛的觀光小火車。復古的柴油火車沿著保津川溪谷行駛，從車窗可飽覽絕美的自然溪谷風光。', guideFood: '沿途車站販售的熱飲或小零食。', guideBuy: '小火車限定周邊商品。'
                 },
                 { 
                     id:203, name:'嵐山小火車 (龜岡→嵐山)', category:'transport', startTime:'11:30', travelTime:'20', transportType:'public', note:'搭乘小火車返回嵐山站。',
@@ -645,7 +661,7 @@ createApp({
                     guideStory: '抵達吉野山腳下，空氣中開始瀰漫著春天的氣息。', guideFood: '無', guideBuy: '無'
                 },
                 { 
-                    id:304, name:'奈良吉野山 Mt. Yoshino', category:'sightseeing', startTime:'10:00', transportType:'walk', attachmentType: 'photo', attachmentTitle: '吉野山地圖', note:'🌸 導遊Tips：日本第一賞櫻勝地！「一目千本」。',
+                    id:304, name:'奈良吉野山 Mt. Yoshino', category:'sightseeing', startTime:'10:00', transportType:'walk', attachmentType: 'photo', attachmentTitle: '吉野山地圖', note:'🌸 導遊Tips：日本第一賞櫻勝地！「一目千本」。\n🚠 交通：近鐵吉野站出站後，可搭乘吉野纜車至「吉野山站 Yoshinoyama Station」。',
                     guideStory: '日本最著名的賞櫻聖地！全山有約三萬株櫻花樹，依海拔分為下千本、中千本、上千本、奧千本，花期交錯，盛開時被稱為「一目千本」，如粉色雲海般極其壯觀。', guideFood: '百年老店「平宗」的鯖魚/鮭魚柿葉壽司；飄散黃豆香的吉野葛餅。', guideBuy: '純正的「吉野本葛粉」、櫻花限定和菓子。'
                 },
                 { 
@@ -662,6 +678,14 @@ createApp({
                 { 
                     id:401, name:'伏見十石舟 Fushimi Jikkokubune', category:'sightseeing', startTime:'10:20', transportType:'walk', hours:'10:20 - 11:10', note:'⛵ 導遊Tips：搭乘傳統木造小船，穿梭在櫻花之間。',
                     guideStory: '江戶時代為了運送米、酒與旅客而在宇治川上航行的傳統木造船。現今乘船穿梭於兩岸垂柳與櫻花交織的浪漫水岸，風景如江戶時代畫作般優美。', guideFood: '伏見名物「酒粕拉麵」(如玄屋拉麵)，以及酒粕冰淇淋。', guideBuy: '伏見是著名酒鄉，必買「月桂冠」或「黃櫻」的清酒，還有伏見限定的小酒杯！'
+                },
+                {
+                    id:402, name:'淀川河川公園背割堤 Yodogawa River Park Sewaritei', category:'sightseeing', startTime:'13:00', transportType:'public', note:'🌸 導遊Tips：長達1.4公里的櫻花隧道，超壯觀！\n🚉 交通：搭乘至 京阪本線「石清水八幡宮站 Iwashimizu-hachimangu Station」步行10分。',
+                    guideStory: '關西地區最強的賞櫻勝地之一！長達1.4公里的櫻花隧道，種植了約250棵染井吉野櫻，將木津川與宇治川的分界堤防染成一條粉紅色的絲帶，極度壯觀。', guideFood: '可以在附近的攤販買些櫻花祭限定的小吃，或是帶便當來這裡的草地上野餐。', guideBuy: '櫻花祭期間的限定攤販小物或地區限定櫻花商品。'
+                },
+                {
+                    id:403, name:'東寺 To-ji Temple (夜櫻)', category:'sightseeing', startTime:'18:30', transportType:'public', hours:'08:00 - 21:30 (最後入場 21:00)', price:'成人/高中生 1,000日圓', note:'🌸 2026夜櫻點燈活動：3月14日至4月12日\n🗼 導遊Tips：五重塔搭配不二櫻是絕景！',
+                    guideStory: '東寺是唯一保留平安京建都時原貌的寺院，境內的五重塔是日本最高的木造塔，也是京都的地標。櫻花季時，著名的「不二櫻」盛開，夜間點燈映照著高聳的五重塔，充滿莊嚴且神祕的美感。', guideFood: '參拜後可以到附近的餐廳吃碗熱騰騰的烏龍麵暖暖身子。', guideBuy: '東寺限定的開運御守與五重塔紀念品。'
                 }
             ], 
             []
@@ -772,7 +796,7 @@ createApp({
             actionModal.value = true; 
         };
 
-        // --- 新增：導遊攻略相關方法 ---
+        // --- 導遊攻略相關方法 ---
         const openGuide = (item, idx) => {
             selectedGuideItem.value = { ...item };
             guideDayIndex.value = selectedDateIndex.value;
@@ -780,7 +804,8 @@ createApp({
             editGuideData.value = {
                 guideStory: item.guideStory || '',
                 guideFood: item.guideFood || '',
-                guideBuy: item.guideBuy || ''
+                guideBuy: item.guideBuy || '',
+                image: item.image || ''
             };
             isGuideEdit.value = false;
             guideModal.value = true;
@@ -789,12 +814,22 @@ createApp({
         const toggleGuideEdit = () => {
             isGuideEdit.value = !isGuideEdit.value;
             if (!isGuideEdit.value) {
-                // 如果取消編輯，把資料重置回原本的
-                editGuideData.value = {
-                    guideStory: selectedGuideItem.value.guideStory || '',
-                    guideFood: selectedGuideItem.value.guideFood || '',
-                    guideBuy: selectedGuideItem.value.guideBuy || ''
+                // 取消編輯時還原
+                editGuideData.value.image = selectedGuideItem.value.image;
+                editGuideData.value.guideStory = selectedGuideItem.value.guideStory || '';
+                editGuideData.value.guideFood = selectedGuideItem.value.guideFood || '';
+                editGuideData.value.guideBuy = selectedGuideItem.value.guideBuy || '';
+            }
+        };
+
+        const handleGuideImg = (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    editGuideData.value.image = ev.target.result;
                 };
+                reader.readAsDataURL(file);
             }
         };
 
@@ -802,20 +837,18 @@ createApp({
             const dIdx = guideDayIndex.value;
             const iIdx = guideItemIndex.value;
             
-            // 更新畫面上顯示的資料
             selectedGuideItem.value.guideStory = editGuideData.value.guideStory;
             selectedGuideItem.value.guideFood = editGuideData.value.guideFood;
             selectedGuideItem.value.guideBuy = editGuideData.value.guideBuy;
+            selectedGuideItem.value.image = editGuideData.value.image;
 
-            // 更新到核心陣列中
             itineraryData.value[dIdx][iIdx].guideStory = editGuideData.value.guideStory;
             itineraryData.value[dIdx][iIdx].guideFood = editGuideData.value.guideFood;
             itineraryData.value[dIdx][iIdx].guideBuy = editGuideData.value.guideBuy;
+            itineraryData.value[dIdx][iIdx].image = editGuideData.value.image;
 
-            // 儲存到本地
             saveToLocal(ITIN_KEY, itineraryData.value);
             
-            // 背景同步到 Google 試算表 (使用修改行程相同的邏輯)
             const payload = { 
                 ...itineraryData.value[dIdx][iIdx], 
                 dayIndex: dIdx, 
@@ -1037,10 +1070,10 @@ createApp({
             currentItinerary, totalJPY, currencyInput, loadingExp, modal, isEdit,
             newExp, newItem, newShop, actionModal, actionData, weatherData, settlement,
             hotelData, 
-            guideModal, isGuideEdit, selectedGuideItem, editGuideData, // 導遊系統相關 State
+            guideModal, isGuideEdit, selectedGuideItem, editGuideData, 
             getTabIcon, getCatIcon, getCatColor, getTransportIcon, getAttachmentIcon, formatNumber, formatTime, formatDate,
             openMap, triggerAttachment, openModal, editItem, handleSave, handleDelete, moveItem, handleImg, handleItineraryImg, handleAttachmentImg, fetchExpenses, fetchItinerary, removeExpense, editHotel, 
-            openGuide, toggleGuideEdit, saveGuide // 導遊系統相關 Method
+            openGuide, toggleGuideEdit, handleGuideImg, saveGuide 
         };
     }
 }).mount('#app');
