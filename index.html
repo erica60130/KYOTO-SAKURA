@@ -162,10 +162,7 @@
                         <div class="flex justify-between items-center text-blue-900 font-bold text-xl px-2">
                             <span>TPE <small class="text-xs block font-normal text-blue-400">{{ formatTime(item.startTime) }}</small></span>
                             <i class="fa-solid fa-plane text-deep-ice-blue text-2xl"></i>
-                            <span>KIX <small class="text-xs block font-normal text-blue-400">抵達</small></span>
-                        </div>
-                        <div v-if="item.image" class="mt-3 rounded-[20px] overflow-hidden h-28 border border-white/50 shadow-sm relative">
-                            <img :src="item.image" class="w-full h-full object-cover">
+                            <span>KIX/TPE <small class="text-xs block font-normal text-blue-400">抵達</small></span>
                         </div>
                         <div class="mt-4 text-[11px] bg-white/60 p-2 rounded-xl text-gray-600 font-medium whitespace-pre-wrap leading-relaxed"><i class="fa-solid fa-suitcase mr-2"></i>{{ item.note }}</div>
                     </div>
@@ -192,10 +189,6 @@
 
                             <div v-if="item.note" class="mt-3 text-[11px] bg-sakura-bg/50 p-3 rounded-2xl border-l-4 border-sakura-pink text-gray-600 leading-relaxed whitespace-pre-wrap">{{ item.note }}</div>
                             
-                            <div v-if="item.image" class="mt-3 rounded-[20px] overflow-hidden h-28 border border-gray-100 shadow-sm relative">
-                                <img :src="item.image" class="w-full h-full object-cover">
-                            </div>
-
                             <div class="mt-3 inline-block">
                                 <span class="text-[10px] text-sakura-dark bg-sakura-pink/10 px-3 py-1.5 rounded-full font-bold flex items-center shadow-sm">
                                     <i class="fa-solid fa-book-open-reader mr-1.5"></i> 點我看圖文攻略
@@ -546,7 +539,7 @@
 
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbxrBVZlQCo_WKcOXnGYJoe368EBoCpqIyMhu2r0VZZZtOmYGYEyqdm2xzQMSNNsEZZm/exec';
-const ITIN_KEY = 'kyoto_itinerary_v6'; // 強制更新記憶鑰匙 (無預設大圖輕量版)
+const ITIN_KEY = 'kyoto_itinerary_v7'; // 強制更新記憶鑰匙 (含第四五天與無預設圖版)
 const HOTEL_KEY = 'kyoto_hotel_data_v2';
 
 const { createApp, ref, computed, onMounted } = Vue;
@@ -574,7 +567,7 @@ createApp({
         const hotelData = ref({ name: '桂川ハウス希 House Nozomi', link: '' });
         const dates = ref([{dateStr:'04/09',weekday:'Thu'},{dateStr:'04/10',weekday:'Fri'},{dateStr:'04/11',weekday:'Sat'},{dateStr:'04/12',weekday:'Sun'},{dateStr:'04/13',weekday:'Mon'}]);
         
-        // --- 根據文檔客製化導遊行程與攻略 (已移除預設大圖) ---
+        // --- 行程資料 ---
         const itineraryData = ref([
             // DAY 1
             [
@@ -675,20 +668,42 @@ createApp({
             ],
             // DAY 4
             [
+                {
+                    id:401, name:'從住宿出發', category:'transport', startTime:'08:00', transportType:'walk', note:'搭車前往伏見（車程約1小時）',
+                    guideStory: '準備好迎接滿滿櫻花的一天！', guideFood: '吃個豐盛的早餐再出發。', guideBuy: '無'
+                },
                 { 
-                    id:401, name:'伏見十石舟 Fushimi Jikkokubune', category:'sightseeing', startTime:'10:20', transportType:'walk', hours:'10:20 - 11:10', note:'⛵ 導遊Tips：搭乘傳統木造小船，穿梭在櫻花之間。',
+                    id:402, name:'伏見十石舟 Fushimi Jikkokubune', category:'sightseeing', startTime:'10:20', transportType:'walk', hours:'10:20 - 11:10', note:'⛵ 導遊Tips：搭乘傳統木造小船，穿梭在櫻花之間。',
                     guideStory: '江戶時代為了運送米、酒與旅客而在宇治川上航行的傳統木造船。現今乘船穿梭於兩岸垂柳與櫻花交織的浪漫水岸，風景如江戶時代畫作般優美。', guideFood: '伏見名物「酒粕拉麵」(如玄屋拉麵)，以及酒粕冰淇淋。', guideBuy: '伏見是著名酒鄉，必買「月桂冠」或「黃櫻」的清酒，還有伏見限定的小酒杯！'
                 },
                 {
-                    id:402, name:'淀川河川公園背割堤 Yodogawa River Park Sewaritei', category:'sightseeing', startTime:'13:00', transportType:'public', note:'🌸 導遊Tips：長達1.4公里的櫻花隧道，超壯觀！\n🚉 交通：搭乘至 京阪本線「石清水八幡宮站 Iwashimizu-hachimangu Station」步行10分。',
-                    guideStory: '關西地區最強的賞櫻勝地之一！長達1.4公里的櫻花隧道，種植了約250棵染井吉野櫻，將木津川與宇治川的分界堤防染成一條粉紅色的絲帶，極度壯觀。', guideFood: '可以在附近的攤販買些櫻花祭限定的小吃，或是帶便當來這裡的草地上野餐。', guideBuy: '櫻花祭期間的限定攤販小物或地區限定櫻花商品。'
+                    id:403, name:'中書島站 Chushojima Station → 石清水八幡宮站 Iwashimizu-hachimangu Station', category:'transport', startTime:'12:00', transportType:'public', note:'步行6分鐘至 KH京阪本線「中書島站 Chushojima Station」，搭乘約8分鐘至「石清水八幡宮站 Iwashimizu-hachimangu Station」 (車資約¥320)。',
+                    guideStory: '搭乘京阪電車準備前往超壯觀的背割堤！', guideFood: '無', guideBuy: '無'
                 },
                 {
-                    id:403, name:'東寺 To-ji Temple (夜櫻)', category:'sightseeing', startTime:'18:30', transportType:'public', hours:'08:00 - 21:30 (最後入場 21:00)', price:'成人/高中生 1,000日圓', note:'🌸 2026夜櫻點燈活動：3月14日至4月12日\n🗼 導遊Tips：五重塔搭配不二櫻是絕景！',
+                    id:404, name:'淀川河川公園背割堤 Yodogawa River Park Sewaritei', category:'sightseeing', startTime:'12:30', transportType:'walk', note:'🌸 導遊Tips：下車步行約10分鐘。\n📸 拍照教學：背割堤櫻花偏白，拍攝時請留意測光並適當增加EV值，避免櫻花拍起來灰灰暗暗的喔！',
+                    guideStory: '關西地區最強的賞櫻勝地之一！長達1.4公里的櫻花隧道，種植了約250棵染井吉野櫻，將木津川與宇治川的分界堤防染成一條粉紅色的絲帶，極度壯觀。', guideFood: '🍱 花見野餐時間！從八幡市車站走過來的路上有超商，入口處也有便當攤位，買滿食物坐在草地上野餐最棒了！', guideBuy: '櫻花祭期間的限定攤販小物或地區限定櫻花商品。'
+                },
+                {
+                    id:405, name:'石清水八幡宮站 → 東寺站 Toji Station', category:'transport', startTime:'16:00', transportType:'public', note:'步行12分至 KH京阪本線「石清水八幡宮站 Iwashimizu-hachimangu Station」搭乘12分至「丹波橋站 Tambabashi Station」。\n🚶 步行3分至 B近鐵京都線「近鐵丹波橋站 Kintetsu-Tambabashi Station」搭乘7分至「東寺站 Toji Station」。\n🚶 步行10分抵達東寺 (總車程約1小時，車資約¥560)。',
+                    guideStory: '準備回市區欣賞絕美的夜櫻點燈。', guideFood: '無', guideBuy: '無'
+                },
+                {
+                    id:406, name:'東寺 To-ji Temple (夜櫻)', category:'sightseeing', startTime:'17:30', transportType:'walk', hours:'08:00 - 21:30 (最後入場 21:00)', price:'特別參拜：成人/高中生 1,000日圓', note:'🌸 2026夜櫻點燈活動：3月14日至4月12日 (18:00 開始點燈)\n🗼 導遊Tips：五重塔搭配不二櫻是絕景！',
                     guideStory: '東寺是唯一保留平安京建都時原貌的寺院，境內的五重塔是日本最高的木造塔，也是京都的地標。櫻花季時，著名的「不二櫻」盛開，夜間點燈映照著高聳的五重塔，充滿莊嚴且神祕的美感。', guideFood: '參拜後可以到附近的餐廳吃碗熱騰騰的烏龍麵暖暖身子。', guideBuy: '東寺限定的開運御守與五重塔紀念品。'
                 }
-            ], 
-            []
+            ],
+            // DAY 5
+            [
+                {
+                    id:501, name:'星宇航空 JX823 (回程)', category:'flight', startTime:'15:10', note:'準備搭機返回溫暖的家，關西機場 Kansai Airport (KIX) 起飛。',
+                    guideStory: '帶著滿滿的櫻花回憶與伴手禮，準備搭機回程！建議提前兩到三小時抵達機場掛行李。', guideFood: '關西機場免稅店的最後衝刺，可以買些熱食墊墊胃。', guideBuy: 'Royce 巧克力、白色戀人、呼吸巧克力，機場免稅店一次買齊！'
+                },
+                {
+                    id:502, name:'臺北 TPE (T1) 抵達', category:'flight', startTime:'17:05', note:'平安抵達臺灣！期待下一次的旅行！',
+                    guideStory: '結束這趟美好的京都賞櫻之旅。', guideFood: '無', guideBuy: '無'
+                }
+            ]
         ]);
 
         const shoppingList = ref([]);
@@ -796,7 +811,6 @@ createApp({
             actionModal.value = true; 
         };
 
-        // --- 導遊攻略相關方法 ---
         const openGuide = (item, idx) => {
             selectedGuideItem.value = { ...item };
             guideDayIndex.value = selectedDateIndex.value;
@@ -814,7 +828,6 @@ createApp({
         const toggleGuideEdit = () => {
             isGuideEdit.value = !isGuideEdit.value;
             if (!isGuideEdit.value) {
-                // 取消編輯時還原
                 editGuideData.value.image = selectedGuideItem.value.image;
                 editGuideData.value.guideStory = selectedGuideItem.value.guideStory || '';
                 editGuideData.value.guideFood = selectedGuideItem.value.guideFood || '';
